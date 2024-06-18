@@ -1,0 +1,18 @@
+{
+  "name": "fakemono",
+  "version": "1.0.0",
+  "description": "For the lack of a monorepo nobody is stopping me to fakemonorepo!",
+  "main": "index.js",
+  "scripts": {
+    "start": "ts-node index.ts"
+  },
+  "author": "Igor Soloydenko",
+  "license": "MIT",
+  "dependencies": {
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.5"
+  }
+}
