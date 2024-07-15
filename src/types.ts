@@ -1,5 +1,6 @@
 export interface WorkspaceDef {
   root: string;
+  projectProfiles: { [profile: string]: ProjectDef['gitDir'][] };
   projects: ProjectDef[];
   ignoreDirs: string[];
 }

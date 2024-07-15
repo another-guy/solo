@@ -21,21 +21,16 @@ function nameSort(a: string, b: string): number {
 export function createCli(): Command {
   const program = new Command();
 
-  function provideExamples() {
+  function provideExamples(...lines: string[]): string {
     return `
 Examples:
-  $ npm start -- help
-  $ npm start -- help run-many
-  $ npm start -- run-many -c /c/SourceCode/fakemono.json -t git --cmd "git pull" --verbose
-  $ npm start -- analyze  -c /c/SourceCode/fakemono.json -d /c/SourceCode --verbose
-  $ npm start -- list-remote-repos -l isoloydenko@ah4r.com -t <TOKEN> | grep https
+${lines.join('\n')}
 `;
   }
 
   program
     .name('fakemono')
     .description('A fake monorepo manager.')
-    .addHelpText('after', provideExamples())
     .option('--verbose', 'Provide verbose output.')
     .option('--utc', 'TODO: Use UTC timestamps.') // TODO: Implement non-UTC timestamps!
     .version('0.0.1');
@@ -47,6 +42,7 @@ Examples:
     .option('-p, --project <project>', 'ADO project name.')
     .option('-l, --login <login>', 'ADO login.')
     .option('-t, --token <token>', 'ADO personal access token.')
+    .addHelpText('after', provideExamples('$ npm start -- list-remote-repos -l isoloydenko@ah4r.com -t <TOKEN> | grep https'))
     .action(async function (this: any, str, options) {
       const executionContext = createExecutionContext(parseCommonOptions(options));
       const { organization, project, login, token } = str;
@@ -73,6 +69,12 @@ Examples:
     .description('Analyze the workspace.')
     .option('-d, --directory <directory>', 'directory to analyze as the monorepo.')
     .option('-c, --config <configFilePath>', 'path to the fakemono.json config file.')
+    .addHelpText(
+      'after',
+      provideExamples(
+        '$ npm start -- analyze  -c /c/SourceCode/fakemono.json -d /c/SourceCode --verbose',
+      ),
+    )
     .action(async function (this: any, str, options) {
       const executionContext = createExecutionContext(parseCommonOptions(options));
       const { directory, config: configFilePath } = str;
@@ -142,18 +144,29 @@ Examples:
   program
     .command('run-many')
     .description('run a command against multiple projects.')
+    .option('-p, --profile <profile>', 'profile to use to filter target projects.')
     .option('-c, --config <configFilePath>', 'path to the fakemono.json config file.')
     .option('-t, --type <commandType>', 'command type. One of: "dir", "git", "npm", "dotnet".')
     .option('--cmd <command>', 'the command to run.')
+    .addHelpText(
+      'after',
+      provideExamples(
+        '$ npm start -- run-many -p 4vendors -c /c/SourceCode/fakemono.json -t git --cmd "git pull" --verbose',
+        '$ npm start -- run-many             -c /c/SourceCode/fakemono.json -t git --cmd "git pull"',
+      ),
+    )
     .action(async function (this: any, str, options) {
       const executionContext = createExecutionContext(parseCommonOptions(options));
-      const { config: configFilePath, type: commandTypeRaw, cmd } = str;
+      const { profile: profileName, config: configFilePath, type: commandTypeRaw, cmd } = str;
       const commandType = commandTypeRaw as CommandType | undefined;
       const workspace = await exportWorkspace(configFilePath, executionContext);
       const { logger } = executionContext;
 
       logger.verbose(JSON.stringify({ configFilePath, commandType, cmd }));
 
+      const projectProfileFilterFn = profileName ?
+        (projectDef: ProjectDef) => workspace.projectProfiles[profileName].includes(projectDef.gitDir) :
+        () => true;
       const projectFilterFn = commandType ?
         (projectDef: ProjectDef) => {
           return (commandType === 'dir' || commandType === 'git') ||
@@ -162,7 +175,7 @@ Examples:
         } :
         () => true;
 
-      const filteredProjects = workspace.projects.filter(projectFilterFn);
+      const filteredProjects = workspace.projects.filter(p => projectProfileFilterFn(p) && projectFilterFn(p));
       logger.logHighlight(`Running command "${cmd}" in ${filteredProjects.length} projects.`);
       filteredProjects.forEach((projectDef) => {
         const subDir =
