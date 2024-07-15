@@ -1,14 +1,18 @@
 {
   "name": "fakemono",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "For the lack of a monorepo nobody is stopping me to fakemonorepo!",
   "main": "index.js",
   "scripts": {
-    "start": "ts-node index.ts"
+    "start": "ts-node index.ts",
+    "tsc": "tsc"
   },
   "author": "Igor Soloydenko",
   "license": "MIT",
   "dependencies": {
+    "axios": "^1.7.2",
+    "chalk": "^4.1.2",
+    "commander": "^12.1.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.5"
   },
