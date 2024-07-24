@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { createExecutionContext, parseCommonOptions } from '../cli';
+import { execAsync, neverThrow } from '../exec-promise';
 import { PackageJson } from '../types';
 import { CliCommandMetadata, CliOption, CliOptionsSet } from './cli-option';
 
@@ -23,18 +24,25 @@ async function auditAsyncCommand(this: any, str: any, options: any) {
   const executionContext = createExecutionContext(parseCommonOptions(options));
   const { directory } = str;
   const { logger } = executionContext;
+
   logger.log(`Analyzing the directory: ${directory}`);
 
-  const packageJsonPath = path.join(directory, 'package.json');
+  const packageJsonPath = join(directory, 'package.json');
   if (!fs.existsSync(packageJsonPath)) {
     logger.error(`package.json not found in the directory: ${directory}`);
     return;
+  } else {
+    logger.log(`Found package.json at: ${packageJsonPath}`);
   }
   
   const config = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8')) as PackageJson;
   const { dependencies, devDependencies } = config;
-  console.log(dependencies);
-  console.log(devDependencies);
+
+  try {
+    logger.log(await execAsync(directory, "npm audit", { throwOnCode: neverThrow }));
+  } catch (error) {
+    logger.error(error);
+  }
 };
 
 function join(...paths: string[]): string {

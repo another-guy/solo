@@ -64,6 +64,7 @@ async function runManyAsyncCommand(this: any, str: any, options: any) {
 
     const dir = path.join(workspace.root, subDir);
 
+    // TODO: use execAsync
     exec(`cd ${dir} && ${cmd}`, (error, stdout, stderr) => {
       logger.verbose(`Executing command "${cmd}" in "${dir}"`)
       if (error) {
