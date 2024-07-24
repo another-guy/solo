@@ -1,13 +1,11 @@
-import * as path from 'path';
-import { Command } from 'commander';
-import { exportWorkspace, hasIncompleteConfig } from './load-workspace';
-import { exec } from 'child_process';
 import chalk from 'chalk';
-import { AdoListRepositoriesResponse, ProjectDef } from './types';
+import { Command } from 'commander';
 import { readdir } from 'fs/promises';
-import axios, { AxiosResponse } from 'axios';
-
-type CommandType = 'dir' | 'git' | 'npm' | 'dotnet';
+import * as path from 'path';
+import { allCommands } from './commands';
+import { CommandMetadata, createCommandExample, describeCliOption } from './commands/cli-option';
+import { exportWorkspace, hasIncompleteConfig } from './load-workspace';
+import { never } from './typescript';
 
 function join(...paths: string[]): string {
   const p = path.join(...paths);
@@ -21,48 +19,42 @@ function nameSort(a: string, b: string): number {
 export function createCli(): Command {
   const program = new Command();
 
-  function provideExamples(...lines: string[]): string {
-    return `
-Examples:
-${lines.join('\n')}
-`;
-  }
-
   program
-    .name('fakemono')
-    .description('A fake monorepo manager.')
-    .option('--verbose', 'Provide verbose output.')
-    .option('--utc', 'TODO: Use UTC timestamps.') // TODO: Implement non-UTC timestamps!
-    .version('0.0.1');
+    .name(`fakemono`)
+    .description(`Igor's AH4R CLI tool.`)
+    .option(`--verbose`, `Provide verbose output.`)
+    .version(`0.0.1`);
 
-  program
-    .command('list-remote-repos')
-    .description('List remote repositories in ADO project.')
-    .option('-o, --organization <organization>', 'ADO organization name.')
-    .option('-p, --project <project>', 'ADO project name.')
-    .option('-l, --login <login>', 'ADO login.')
-    .option('-t, --token <token>', 'ADO personal access token.')
-    .addHelpText('after', provideExamples('$ npm start -- list-remote-repos -l isoloydenko@ah4r.com -t <TOKEN> | grep https'))
-    .action(async function (this: any, str, options) {
-      const executionContext = createExecutionContext(parseCommonOptions(options));
-      const { organization, project, login, token } = str;
-      const { logger } = executionContext;
+  allCommands.forEach((command) => registerCommand(program, command));
 
-      const org = organization || 'americanhomes4rent';
-      const proj = project || 'oculos';
-      const listRepositoriesResponse = await axios.get<{}, AxiosResponse<AdoListRepositoriesResponse>>(`https://dev.azure.com/${org}/${proj}/_apis/git/repositories`, {
-        headers: {
-          Authorization: `Basic ${Buffer.from(`${login}:${token}`).toString('base64')}`,
-        },
-      });
+  // // TODO:
+  // program
+  //   .command('list-deployments')
+  //   .description('List deployments in ADO project.')
+  //   .option(...describeCliOption(commonAdoOptions.organization))
+  //   .option(...describeCliOption(commonAdoOptions.project))
+  //   .option(...describeCliOption(commonAdoOptions.login))
+  //   .option(...describeCliOption(commonAdoOptions.token))
+  //   .addHelpText('after', provideExamples('$ npm start -- list-remote-repos -l isoloydenko@ah4r.com -t <PERSONAL_ACCESS_TOKEN> | grep https'))
+  //   .action(async function (this: any, str, options) {
+  //     const executionContext = createExecutionContext(parseCommonOptions(options));
+  //     const { organization, project, login, token } = str;
+  //     const { logger } = executionContext;
 
-      if (listRepositoriesResponse.status < 200 && listRepositoriesResponse.status >= 300)
-        throw new Error(`!!!!!!!!!!!!!!!!!!!!!!!!!!!!!`);
+  //     const org = organization || 'americanhomes4rent';
+  //     const proj = project || 'oculos';
+  //     const listReposResponse = await axios.get<{}, AxiosResponse<any>>(`https://vsrm.dev.azure.com/${org}/${proj}/_apis/release/deployments?api-version=7.1-preview.2`, {
+  //       headers: {
+  //         Authorization: `Basic ${Buffer.from(`${login}:${token}`).toString('base64')}`,
+  //       },
+  //     });
 
-      listRepositoriesResponse.data.value.forEach((repo) => {
-        console.log(repo.remoteUrl);
-      });
-    });
+  //     if (listReposResponse.status < 200 && listReposResponse.status >= 300)
+  //       throw new Error(`!!!!!!!!!!!!!!!!!!!!!!!!!!!!!`);
+
+  //     console.log(listReposResponse.status + ' ' + listReposResponse.statusText);
+  //     console.log(listReposResponse.data);
+  //   });
 
   program
     .command('analyze')
@@ -71,7 +63,7 @@ ${lines.join('\n')}
     .option('-c, --config <configFilePath>', 'path to the fakemono.json config file.')
     .addHelpText(
       'after',
-      provideExamples(
+      formatExample(
         '$ npm start -- analyze  -c /c/SourceCode/fakemono.json -d /c/SourceCode --verbose',
       ),
     )
@@ -83,7 +75,8 @@ ${lines.join('\n')}
 
       const subdirectoriesFound =
         (await readdir(directory, { withFileTypes: true }))
-          .filter((x) => x.isDirectory()).map((x) => join(directory, x.name))
+          .filter((dirent) => dirent.isDirectory())
+          .map((dirent) => join(directory, dirent.name))
           .sort(nameSort);
       logger.verbose('Subdirectories found:');
       subdirectoriesFound.forEach((subDir) => {
@@ -100,7 +93,7 @@ ${lines.join('\n')}
             return projectDir;
           })
           .sort(nameSort);
-        incompleteConfigDirs.sort(nameSort);
+      incompleteConfigDirs.sort(nameSort);
 
       logger.verbose('Declared project directories:');
       declaredGitDirs.forEach((gitDir) => {
@@ -120,14 +113,14 @@ ${lines.join('\n')}
         const isFound = subdirectoriesFound.includes(dir);
         const isIgnored = ignoreDirs.includes(dir);
         const isIncompleteConfig = incompleteConfigDirs.includes(dir);
-        
+
         const status =
           isFound && isIgnored ? 'IGNORED' :
-          isFound && isDeclared && isIncompleteConfig ? 'MISCONFIGURED' :
-          isFound && isDeclared ? 'READY' :
-          isFound && !isDeclared ? 'UNREGISTERED' :
-          !isFound && isDeclared ? 'MISSING' :
-          never();
+            isFound && isDeclared && isIncompleteConfig ? 'MISCONFIGURED' :
+              isFound && isDeclared ? 'READY' :
+                isFound && !isDeclared ? 'UNREGISTERED' :
+                  !isFound && isDeclared ? 'MISSING' :
+                    never();
 
         const statusColor = {
           READY: chalk.greenBright,
@@ -141,71 +134,14 @@ ${lines.join('\n')}
       });
     });
 
-  program
-    .command('run-many')
-    .description('run a command against multiple projects.')
-    .option('-p, --profile <profile>', 'profile to use to filter target projects.')
-    .option('-c, --config <configFilePath>', 'path to the fakemono.json config file.')
-    .option('-t, --type <commandType>', 'command type. One of: "dir", "git", "npm", "dotnet".')
-    .option('--cmd <command>', 'the command to run.')
-    .addHelpText(
-      'after',
-      provideExamples(
-        '$ npm start -- run-many -p 4vendors -c /c/SourceCode/fakemono.json -t git --cmd "git pull" --verbose',
-        '$ npm start -- run-many             -c /c/SourceCode/fakemono.json -t git --cmd "git pull"',
-      ),
-    )
-    .action(async function (this: any, str, options) {
-      const executionContext = createExecutionContext(parseCommonOptions(options));
-      const { profile: profileName, config: configFilePath, type: commandTypeRaw, cmd } = str;
-      const commandType = commandTypeRaw as CommandType | undefined;
-      const workspace = await exportWorkspace(configFilePath, executionContext);
-      const { logger } = executionContext;
-
-      logger.verbose(JSON.stringify({ configFilePath, commandType, cmd }));
-
-      const projectProfileFilterFn = profileName ?
-        (projectDef: ProjectDef) => workspace.projectProfiles[profileName].includes(projectDef.gitDir) :
-        () => true;
-      const projectFilterFn = commandType ?
-        (projectDef: ProjectDef) => {
-          return (commandType === 'dir' || commandType === 'git') ||
-            (commandType === 'npm' && projectDef.type === 'node-web') ||
-            (commandType === 'dotnet' && projectDef.type === 'dotnet');
-        } :
-        () => true;
-
-      const filteredProjects = workspace.projects.filter(p => projectProfileFilterFn(p) && projectFilterFn(p));
-      logger.logHighlight(`Running command "${cmd}" in ${filteredProjects.length} projects.`);
-      filteredProjects.forEach((projectDef) => {
-        const subDir =
-          commandType === 'dir' || commandType === 'git' ? projectDef.gitDir :
-            commandType === 'npm' ? projectDef.projectDir :
-              commandType === 'dotnet' ? projectDef.projectDir :
-                never();
-
-        const dir = path.join(workspace.root, subDir);
-
-
-        exec(`cd ${dir} && ${cmd}`, (error, stdout, stderr) => {
-          logger.verbose(`Executing command "${cmd}" in "${dir}"`)
-          if (error) {
-            logger.error(`${dir}\n${error}`);
-          } else {
-            logger.log(`${dir}\n${stdout}`);
-          }
-        });
-      });
-    });
-
   return program;
 }
 
 export type CommonOptions = ReturnType<typeof parseCommonOptions>;
 
 export function parseCommonOptions(options: any) {
-  const { verbose, utc } = options.parent.opts();
-  return { verbose, utc };
+  const { verbose } = options.parent.opts();
+  return { verbose };
 }
 
 export interface ExecutionContext {
@@ -241,12 +177,32 @@ export function logger(options: CommonOptions) {
     warn: (...input: unknown[]) => myLog(chalk.yellow, 'WARN', ...input), // console.log(chalk.yellow(timestamp(), '[WARN]', ...input))
     logHighlight: (...input: unknown[]) => myLog(chalk.green, 'LOG', ...input), // console.log(chalk.green(timestamp(), '[INFO]', ...input))
     log: (...input: unknown[]) => myLog(chalk.white, 'LOG', ...input), // console.log(chalk.white(timestamp(), '[INFO]', ...input))
-    verbose: options.verbose ? (...input: unknown[]) => myLog(chalk.gray, 'VERBOSE', ...input) : () => {}, //, ...input){ if (options.verbose) , // console.log(chalk.gray(timestamp(), '[VERBOSE]', ...input)) }
+    verbose: options.verbose ? (...input: unknown[]) => myLog(chalk.gray, 'VERBOSE', ...input) : () => { }, //, ...input){ if (options.verbose) , // console.log(chalk.gray(timestamp(), '[VERBOSE]', ...input)) }
     trace: (...input: unknown[]) => myLog(chalk.magenta, 'TRACE', ...input), // console.log(chalk.magenta(timestamp(), '[TRACE]', ...input))
     debug: (...input: unknown[]) => myLog(chalk.magenta, 'DEBUG', ...input), // console.log(chalk.magenta(timestamp(), '[DEBUG]', ...input))
   };
 }
 
-export function never(): never {
-  throw new Error('Never reached');
+function registerCommand(programCommand: Command, commandMetadata: CommandMetadata) {
+  let command = programCommand
+    .command(commandMetadata.name)
+    .description(commandMetadata.description);
+
+  command = Object
+    .values(commandMetadata.options)
+    .reduce(
+      (command, option) => command.option(...describeCliOption(option)),
+      command,
+    );
+  
+  command
+    .addHelpText('after', formatExample(createCommandExample(commandMetadata)))
+    .action(commandMetadata.impl);
+}
+
+function formatExample(...lines: string[]): string {
+  return `
+Example:
+${lines.join('\n')}
+`;
 }
