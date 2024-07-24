@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { createExecutionContext, parseCommonOptions } from '../cli';
-import { CommandMetadata } from './cli-option';
+import { CliCommandMetadata } from './cli-option';
 
 const commandName = `check-health`;
 
@@ -42,7 +42,7 @@ async function checkHealthAsyncCommand(this: any, str: any, options: any) {
   logger.log('ADO config successfully validated.');
 };
 
-export const command: CommandMetadata = {
+export const command: CliCommandMetadata = {
   name: commandName,
   description:
 `Self-check the health of the CLI tool.

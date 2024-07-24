@@ -1,11 +1,11 @@
-export interface CommandMetadata {
+export interface CliCommandMetadata {
   name: string;
   description: string;
-  options: Options;
+  options: CliOptionsSet;
   impl: (this: any, str: any, options: any) => Promise<void>;
 }
 
-export interface Options {
+export interface CliOptionsSet {
   [_: string]: CliOption;
 }
 
@@ -23,7 +23,7 @@ export function describeCliOption(option: CliOption): [string, string] {
   return [`${short ? `-${short}, ` : ''}--${long} <${codeName}>`, description];
 }
 
-export const optionsToExamples = (options: Options) =>
+export const optionsToExamples = (options: CliOptionsSet) =>
   Object
     .values(options)
     .map(provideCliOptionExample)
@@ -34,6 +34,6 @@ export function provideCliOptionExample(option: CliOption): string {
   return `${short ? `-${short}` : `--${long}`} ${exampleValue}`;
 }
 
-export function createCommandExample(commandMetadata: CommandMetadata): string {
+export function createCommandExample(commandMetadata: CliCommandMetadata): string {
   return `$ npm start -- ${commandMetadata.name} ${optionsToExamples(commandMetadata.options)}`;
 }

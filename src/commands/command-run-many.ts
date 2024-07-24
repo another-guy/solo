@@ -4,7 +4,7 @@ import { createExecutionContext, parseCommonOptions } from '../cli';
 import { exportWorkspace } from '../load-workspace';
 import { ProjectDef } from '../types';
 import { never } from '../typescript/never';
-import { CliOption, CommandMetadata } from './cli-option';
+import { CliOption, CliCommandMetadata } from './cli-option';
 import { commonOptions } from './common-options';
 
 type CommandType = 'dir' | 'git' | 'npm' | 'dotnet';
@@ -75,7 +75,7 @@ async function runManyAsyncCommand(this: any, str: any, options: any) {
   });
 }
 
-export const command: CommandMetadata = {
+export const command: CliCommandMetadata = {
   name: commandName,
   description: `run a command against multiple projects.`,
   options: runManyCommandOptions,

@@ -1,20 +1,7 @@
 import chalk from 'chalk';
 import { Command } from 'commander';
-import { readdir } from 'fs/promises';
-import * as path from 'path';
 import { allCommands } from './commands';
-import { CommandMetadata, createCommandExample, describeCliOption } from './commands/cli-option';
-import { exportWorkspace, hasIncompleteConfig } from './load-workspace';
-import { never } from './typescript';
-
-function join(...paths: string[]): string {
-  const p = path.join(...paths);
-  return p.charAt(p.length - 1) === path.sep ? p.slice(0, -1) : p;
-}
-
-function nameSort(a: string, b: string): number {
-  return a.localeCompare(b);
-}
+import { CliCommandMetadata, createCommandExample, describeCliOption } from './commands/cli-option';
 
 export function createCli(): Command {
   const program = new Command();
@@ -55,84 +42,6 @@ export function createCli(): Command {
   //     console.log(listReposResponse.status + ' ' + listReposResponse.statusText);
   //     console.log(listReposResponse.data);
   //   });
-
-  program
-    .command('analyze')
-    .description('Analyze the workspace.')
-    .option('-d, --directory <directory>', 'directory to analyze as the monorepo.')
-    .option('-c, --config <configFilePath>', 'path to the fakemono.json config file.')
-    .addHelpText(
-      'after',
-      formatExample(
-        '$ npm start -- analyze  -c /c/SourceCode/fakemono.json -d /c/SourceCode --verbose',
-      ),
-    )
-    .action(async function (this: any, str, options) {
-      const executionContext = createExecutionContext(parseCommonOptions(options));
-      const { directory, config: configFilePath } = str;
-      const workspace = await exportWorkspace(configFilePath, executionContext);
-      const { logger } = executionContext;
-
-      const subdirectoriesFound =
-        (await readdir(directory, { withFileTypes: true }))
-          .filter((dirent) => dirent.isDirectory())
-          .map((dirent) => join(directory, dirent.name))
-          .sort(nameSort);
-      logger.verbose('Subdirectories found:');
-      subdirectoriesFound.forEach((subDir) => {
-        logger.verbose(subDir);
-      });
-
-      const incompleteConfigDirs: string[] = [];
-      const declaredGitDirs =
-        workspace.projects
-          .map((projectDef) => {
-            const projectDir = join(workspace.root, projectDef.gitDir);
-            if (hasIncompleteConfig(projectDef))
-              incompleteConfigDirs.push(projectDir);
-            return projectDir;
-          })
-          .sort(nameSort);
-      incompleteConfigDirs.sort(nameSort);
-
-      logger.verbose('Declared project directories:');
-      declaredGitDirs.forEach((gitDir) => {
-        logger.verbose(gitDir);
-      });
-
-      const ignoreDirs = workspace.ignoreDirs.map((dir) => join(workspace.root, dir));
-      logger.verbose('Ignored directories:');
-      ignoreDirs.forEach((dir) => {
-        logger.verbose(dir);
-      });
-
-      const allDirs = Array.from(new Set([...subdirectoriesFound, ...declaredGitDirs]));
-      logger.log('All directories:');
-      allDirs.forEach((dir) => {
-        const isDeclared = declaredGitDirs.includes(dir);
-        const isFound = subdirectoriesFound.includes(dir);
-        const isIgnored = ignoreDirs.includes(dir);
-        const isIncompleteConfig = incompleteConfigDirs.includes(dir);
-
-        const status =
-          isFound && isIgnored ? 'IGNORED' :
-            isFound && isDeclared && isIncompleteConfig ? 'MISCONFIGURED' :
-              isFound && isDeclared ? 'READY' :
-                isFound && !isDeclared ? 'UNREGISTERED' :
-                  !isFound && isDeclared ? 'MISSING' :
-                    never();
-
-        const statusColor = {
-          READY: chalk.greenBright,
-          IGNORED: chalk.gray,
-          MISCONFIGURED: chalk.yellowBright,
-          UNREGISTERED: chalk.red,
-          MISSING: chalk.yellow,
-        }[status];
-
-        logger.log(statusColor(status), dir);
-      });
-    });
 
   return program;
 }
@@ -183,7 +92,7 @@ export function logger(options: CommonOptions) {
   };
 }
 
-function registerCommand(programCommand: Command, commandMetadata: CommandMetadata) {
+function registerCommand(programCommand: Command, commandMetadata: CliCommandMetadata) {
   let command = programCommand
     .command(commandMetadata.name)
     .description(commandMetadata.description);

@@ -3,7 +3,7 @@ import { createExecutionContext, parseCommonOptions } from '../cli';
 import { renderTable } from '../cli/render-table';
 import { AdoListRepositoriesResponse, AdoRepository } from '../types';
 import { commonAdoOptions } from './ado-options';
-import { CommandMetadata } from './cli-option';
+import { CliCommandMetadata } from './cli-option';
 
 const commandName = `list-remote-repos`;
 
@@ -38,7 +38,7 @@ async function listRemoteReposAsyncCommand(this: any, str: any, options: any) {
   ));
 };
 
-export const command: CommandMetadata = {
+export const command: CliCommandMetadata = {
   name: commandName,
   description: `List remote repositories in ADO project.`,
   options: listRemoteReposCommandOptions,
