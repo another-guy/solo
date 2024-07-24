@@ -103,15 +103,15 @@ function registerCommand(programCommand: Command, commandMetadata: CliCommandMet
       (command, option) => command.option(...describeCliOption(option)),
       command,
     );
-  
+
   command
     .addHelpText('after', formatExample(createCommandExample(commandMetadata)))
     .action(commandMetadata.impl);
-}
 
-function formatExample(...lines: string[]): string {
-  return `
+  function formatExample(...lines: string[]): string {
+    return `
 Example:
 ${lines.join('\n')}
 `;
+  }
 }

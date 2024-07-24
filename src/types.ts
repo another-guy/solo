@@ -1,3 +1,5 @@
+// TODO: split by service / tool
+
 export interface WorkspaceDef {
   root: string;
   projectProfiles: { [profile: string]: ProjectDef['gitDir'][] };
@@ -29,3 +31,17 @@ export interface AdoRepository {
   remoteUrl: string;
   sshUrl: string;
 }
+
+export interface PackageJson {
+  name: string,
+  version: SemVerString,
+  description: string,
+  main: string,
+  scripts: { [_: string]: string },
+  author: string,
+  license: string,
+  dependencies: { [name: string]: SemVerString };
+  devDependencies: { [name: string]: SemVerString };
+}
+
+export type SemVerString = string;
