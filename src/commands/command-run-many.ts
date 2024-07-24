@@ -6,6 +6,7 @@ import { ProjectDef } from '../types';
 import { never } from '../typescript/never';
 import { CliOption, CliCommandMetadata } from './cli-option';
 import { commonOptions } from './common-options';
+import { execAsync, nonZeroCode } from '../exec-promise';
 
 type CommandType = 'dir' | 'git' | 'npm' | 'dotnet';
 
@@ -55,7 +56,7 @@ async function runManyAsyncCommand(this: any, str: any, options: any) {
 
   const filteredProjects = workspace.projects.filter(p => projectProfileFilterFn(p) && projectFilterFn(p));
   logger.logHighlight(`Running command "${cmd}" in ${filteredProjects.length} projects.`);
-  filteredProjects.forEach((projectDef) => {
+  const commandPromises = filteredProjects.map(async (projectDef) => {
     const subDir =
       commandType === 'dir' || commandType === 'git' ? projectDef.gitDir :
         commandType === 'npm' ? projectDef.projectDir :
@@ -64,16 +65,15 @@ async function runManyAsyncCommand(this: any, str: any, options: any) {
 
     const dir = path.join(workspace.root, subDir);
 
-    // TODO: use execAsync
-    exec(`cd ${dir} && ${cmd}`, (error, stdout, stderr) => {
+    try {
       logger.verbose(`Executing command "${cmd}" in "${dir}"`)
-      if (error) {
-        logger.error(`${dir}\n${error}`);
-      } else {
-        logger.log(`${dir}\n${stdout}`);
-      }
-    });
+      const stdout = await execAsync(dir, cmd, { throwOnCode: nonZeroCode });
+      logger.log(`${dir}\n${stdout}`);
+    } catch (error) {
+      logger.error(`${dir}\n${error}`);
+    }
   });
+  await Promise.all(commandPromises);
 }
 
 export const command: CliCommandMetadata = {
