@@ -67,7 +67,7 @@ async function runManyAsyncCommand(this: any, str: any, options: any) {
 
     try {
       logger.verbose(`Executing command "${cmd}" in "${dir}"`)
-      const stdout = await execAsync(dir, cmd, { throwOnCode: nonZeroCode });
+      const stdout = await execAsync(cmd, { cwd: dir, throwOnCode: nonZeroCode });
       logger.log(`${dir}\n${stdout}`);
     } catch (error) {
       logger.error(`${dir}\n${error}`);

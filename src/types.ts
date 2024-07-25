@@ -1,3 +1,5 @@
+import { createComparator } from './algos/sort';
+
 // TODO: split by service / tool
 
 export interface WorkspaceDef {
@@ -45,3 +47,53 @@ export interface PackageJson {
 }
 
 export type SemVerString = string;
+
+export interface NpmAuditResult {
+  auditReportVersion: number;
+  vulnerabilities: {
+    [packageName: string]: NpmAuditVulnerability;
+  };
+  metadata: {
+    vulnerabilities: {
+      info: number;
+      low: number;
+      moderate: number;
+      high: number;
+      critical: number;
+      total: number;
+    },
+    dependencies: {
+      prod: number;
+      dev: number;
+      optional: number;
+      peer: number;
+      peerOptional: number;
+      total: number;
+    }
+  };
+}
+
+export interface NpmAuditVulnerability {
+  name: string;
+  severity: 'none' | 'info' | 'low' | 'moderate' | 'high' | 'critical';
+  isDirect: boolean;
+  via: string[] | { source: number, name: string, dependency: string, title: string, url: string, severity: string, cwe: string[], cvss: { score: number, vectorString: string | null }, range: string }[];
+  effects: string[];
+  range: string;
+  nodes: string[];
+  fixAvailable: boolean | { name: string, version: string, isSemVerMajor: boolean };
+}
+
+export const compareSeverity = createComparator(['none', 'info', 'low', 'moderate', 'high', 'critical']);
+
+export interface NpmOutdatedResult {
+  [packageName: string]: NpmOutatedPackageResult;
+}
+
+export interface NpmOutatedPackageResult {
+  current: SemVerString;
+  wanted: SemVerString;
+  latest: SemVerString;
+  dependent: string;
+  location: string;
+}
