@@ -7,8 +7,8 @@ export function createCli(): Command {
   const program = new Command();
 
   program
-    .name(`fakemono`)
-    .description(`Igor's AH4R CLI tool.`)
+    .name(`solo`)
+    .description(`CLI tool by Igor Soloydenko for automating routine processes.`)
     .option(`--verbose`, `Provide verbose output.`)
     .version(`0.0.1`);
 

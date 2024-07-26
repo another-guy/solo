@@ -42,8 +42,8 @@ export interface PackageJson {
   scripts: { [_: string]: string },
   author: string,
   license: string,
-  dependencies: { [name: string]: SemVerString };
-  devDependencies: { [name: string]: SemVerString };
+  dependencies: { [packageName: string]: SemVerString };
+  devDependencies: { [packageName: string]: SemVerString };
 }
 
 export type SemVerString = string;
@@ -96,4 +96,74 @@ export interface NpmOutatedPackageResult {
   latest: SemVerString;
   dependent: string;
   location: string;
+}
+
+export interface NpmViewResponse {
+  _id: string;
+  _rev: string;
+  name: string;
+  'dist-tags': { [tag: VersionTag]: SemVerString };
+  versions: SemVerString[];
+  time: { [version: VersionTag | SemVerString]: string };
+  bugs: { url: string };
+  author: string;
+  license: string;
+  homepage: string;
+  keywords: string[];
+  repository: { url: string, type: string };
+  description: string;
+  contributors: string[];
+  maintainers: string[];
+  readmeFilename: string;
+  users: { [userId: string]: boolean };
+  _contentLength: number;
+  version: SemVerString;
+  dist: {
+    integrity: string;
+    shasum: string;
+    tarball: string;
+    fileCount: number;
+    unpackedSize: number;
+    signatures: { sig: string, keyid: string }[];
+    attestations: { url: string, provenance: { predicateType: string } };
+  };
+  main: string;
+  type: string;
+  types: string | string[];
+  unpkg: string;
+  browser: $TODO;
+  exports: $TODO;
+  gitHead: string;
+  scripts: { [scriptName: string]: string };
+  typings: string;
+  _npmUser: string;
+  jsdelivr: string;
+  bundlesize: $TODO;
+  commitlint: $TODO;
+  'release-it': $TODO;
+  _npmVersion: SemVerString;
+  directories: $TODO;
+  sideEffects: boolean;
+  _nodeVersion: SemVerString;
+  dependencies: { [packageName: string]: SemVerString };
+  _hasShrinkwrap: boolean;
+  devDependencies: { [packageName: string]: SemVerString };
+  _npmOperationalInternal: $TODO;
+}
+
+type $TODO = any;
+
+type VersionTag = string;
+
+export interface NpmLsResponse {
+  name: string;
+  version: SemVerString;
+  dependencies?: { [packageName: string]: NpmLsDependency };
+}
+
+export interface NpmLsDependency {
+  version: SemVerString;
+  resolved: string;
+  overriden: boolean;
+  dependencies?: { [packageName: string]: NpmLsDependency };
 }

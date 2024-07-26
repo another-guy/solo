@@ -1,11 +1,13 @@
+import chalk from 'chalk';
 import * as fs from 'fs';
 import * as path from 'path';
+import semver from 'semver';
+import { combineComparators, createComparator, reverseComparator, sort } from '../algos/sort';
 import { createExecutionContext, parseCommonOptions } from '../cli';
-import { execAsyncFor, neverThrow } from '../exec-promise';
-import { compareSeverity, NpmAuditResult, NpmAuditVulnerability, NpmOutatedPackageResult, NpmOutdatedResult, PackageJson } from '../types';
-import { CliCommandMetadata, CliOption, CliOptionsSet } from './cli-option';
-import { sort, reverseComparator, createComparator, combineComparators, compareBooleans } from '../algos/sort';
 import { renderTable } from '../cli/render-table';
+import { execAsync, execAsyncFor, neverThrow } from '../exec-promise';
+import { compareSeverity, NpmAuditResult, NpmAuditVulnerability, NpmLsDependency, NpmLsResponse, NpmOutatedPackageResult, NpmOutdatedResult, NpmViewResponse, PackageJson } from '../types';
+import { CliCommandMetadata, CliOption, CliOptionsSet } from './cli-option';
 
 const commandName = 'audit-npm';
 
@@ -27,24 +29,64 @@ async function auditAsyncCommand(this: any, str: any, options: any) {
   const { directory } = str;
   const { logger } = executionContext;
 
-  logger.log(`Analyzing the directory: ${directory}`);
+  logger.verbose(`Analyzing the directory: ${directory}`);
 
   const packageJsonPath = join(directory, 'package.json');
   if (!fs.existsSync(packageJsonPath)) {
     logger.error(`package.json not found in the directory: ${directory}`);
     return;
   } else {
-    logger.log(`Found package.json at: ${packageJsonPath}`);
+    logger.verbose(`Found package.json at: ${packageJsonPath}`);
   }
 
   const config = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8')) as PackageJson;
   const { dependencies, devDependencies } = config;
 
   try {
+    if (!fs.existsSync(join(directory, 'node_modules'))) {
+      // For some npm commands the packages need to actually be installed.
+      logger.verbose('Running npm install');
+      const _ = await execAsync('npm install', { cwd: directory });
+    } else {
+      logger.verbose('node_modules found.');
+    }
+
     const npmOutdatedResult = await execAsyncFor<NpmOutdatedResult>("npm outdated --json", { cwd: directory });
 
     const npmAuditResult = await execAsyncFor<NpmAuditResult>("npm audit --json", { cwd: directory, throwOnCode: neverThrow });
     logger.verbose(JSON.stringify(npmAuditResult, null, 2));
+
+    const vulnerablePackages = Object.values(npmAuditResult.vulnerabilities);
+
+    const indirectPackageLs = (
+      await Promise.all(
+        vulnerablePackages.map(async p => {
+          const npmLsResponse = await execAsyncFor<NpmLsResponse>(`npm ls ${p.name} --json`, { cwd: directory })
+          return [p.name, npmLsResponse] as const;
+        }),
+      )
+    )
+      .reduce(
+        (result, [packageName, npmLsResponse]) => {
+          result[packageName] = npmLsResponse;
+          return result;
+        },
+        {} as { [packageName: string]: NpmLsResponse },
+      )
+
+    const repoDetails =
+      (
+        await Promise.all(
+          vulnerablePackages.map(p => execAsyncFor<NpmViewResponse>(`npm view ${p.name} --json`)),
+        )
+      )
+        .reduce(
+          (result, npmViewResponse) => {
+            result[npmViewResponse.name] = npmViewResponse;
+            return result;
+          },
+          {} as { [packageName: string]: NpmViewResponse },
+        );
 
     const byTypeDesc =
       (a: ExtendedNpmVulnerability, b: ExtendedNpmVulnerability) =>
@@ -62,8 +104,7 @@ async function auditAsyncCommand(this: any, str: any, options: any) {
 
     const allDependencies =
       sort(
-        Object
-          .values(npmAuditResult.vulnerabilities)
+        vulnerablePackages
           .reduce(
             (result, vulnerability) => {
               const dependencyType =
@@ -96,23 +137,18 @@ async function auditAsyncCommand(this: any, str: any, options: any) {
     console.log(renderTable(
       [
         {
-          title: 'package name',
-          selector: v => v.name,
-          width: (packageNameMaxLength + 2) || 15,
-        },
-        {
-          title: 'dep. kind',
-          selector: v => v.isDirect ? 'direct' : 'transitive',
-          width: 15,
+          title: 'package',
+          selector: v => v.name + '\n' + guessGithubUrl(repoDetails[v.name]),
+          width: Math.max(packageNameMaxLength + 2, 60),
         },
         {
           title: 'dev/prod',
-          selector: v => v.dependencyType,
+          selector: v => dependencyTypeColors[v.dependencyType](v.dependencyType),
           width: 10,
         },
         {
           title: 'severity',
-          selector: v => v.severity,
+          selector: v => severityColors[v.severity](v.severity),
           width: 12,
         },
         {
@@ -124,7 +160,12 @@ async function auditAsyncCommand(this: any, str: any, options: any) {
           title: 'vulnerable range',
           selector: v => v.range,
           width: 50,
-        }
+        },
+        {
+          title: 'dependency tree',
+          selector: v => v.isDirect ? '<direct>' : formatIndirect(indirectPackageLs[v.name]),
+          width: 60,
+        },
       ],
       allDependencies,
     ));
@@ -133,22 +174,78 @@ async function auditAsyncCommand(this: any, str: any, options: any) {
   }
 };
 
-function formatVersions(v: ExtendedNpmVulnerability): string {
-  const cellSubtable = [
-    ['package.json: ', `${v.packageJsonVersion}`],
-    ['current: ', `${v.versions?.current}`],
-    ['wanted: ', `${v.versions?.wanted}`],
-    ['latest: ', `${v.versions?.latest}`],
-  ];
+const dependencyTypeColors = {
+  dev: chalk.red,
+  prod: chalk.yellow,
+  '—': chalk.white,
+};
 
-  const desiredWidth = cellSubtable.reduce((max, [a, b]) => Math.max(max, a.length + b.length + 1), 0);
+const severityColors = {
+  none: chalk.white,
+  info: chalk.green,
+  low: chalk.yellow,
+  moderate: chalk.yellow,
+  high: chalk.red,
+  critical: chalk.magenta,
+};
+
+function formatIndirect(result?: NpmLsResponse): string {
+  if (!result) return '[bad npm ls response]';
+  if (!result.dependencies) return '—';
+
+  const lines: string[] = [];
+  traverse(result.dependencies);
+  return lines.join('\n');
+
+  function traverse(dependencies: { [p: string]: NpmLsDependency }, level: number = 0): void {
+    Object.entries(dependencies).forEach(([name, npmLsDependency]) => {
+      lines.push(indent(name, level));
+      if (npmLsDependency.dependencies)
+        traverse(npmLsDependency.dependencies, level + 1);
+    });
+  }
+
+  function indent(s: string, level: number): string {
+    const offset = 2;
+    return ' '.repeat(level * offset) + s;
+  }
+}
+
+function formatVersions(v: ExtendedNpmVulnerability): string {
+  const distance = v.versions && semver.diff(v.versions.current, v.versions.latest);
+  const semverDiffColor = // Ignoring: premajor preminor prepatch prerelease.
+    distance === 'patch' ? chalk.green :
+      distance === 'minor' ? chalk.yellow :
+        distance === 'major' ? chalk.red :
+          chalk.white;
+
+  const cellSubtable = [
+    ['package.json: ', `${v.packageJsonVersion}`, chalk.white],
+    ['current: ', `${v.versions?.current}`, semverDiffColor],
+    ['wanted: ', `${v.versions?.wanted}`, chalk.white],
+    ['latest: ', `${v.versions?.latest}`, chalk.green],
+  ] as const;
+
+  const desiredWidth = cellSubtable.reduce((max, [a, b, _color]) => Math.max(max, a.length + b.length + 1), 0);
 
   return cellSubtable
-    .map(([a, b]) => {
+    .map(([a, b, color]) => {
       const padding = ' '.repeat(desiredWidth - a.length - b.length);
-      return `${a}${padding}${b}`;
+      return `${a}${padding}${color(b)}`;
     })
     .join('\n');
+}
+
+function guessGithubUrl(nvmViewResponse?: NpmViewResponse): string {
+  const url = nvmViewResponse?.repository?.url || '';
+  const marker = 'github.com/';
+  const suffix = '.git';
+  const index = url.toLowerCase().indexOf(marker);
+  if (index < 0) return '—';
+
+  const relativeRouteWithSuffix = url.substring(index + marker.length);
+  const urlCandidate = `https://${marker}${relativeRouteWithSuffix}`;
+  return urlCandidate.endsWith(suffix) ? urlCandidate.substring(0, urlCandidate.length - suffix.length) : urlCandidate;
 }
 
 function join(...paths: string[]): string {

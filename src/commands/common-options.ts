@@ -12,8 +12,8 @@ const configFilePath: CliOption = {
   short: 'c',
   long: `config`,
   codeName: `configFilePath`,
-  description: `path to the fakemono.json config file.`,
-  exampleValue: `/c/SourceCode/fakemono.json`,
+  description: `path to the solo.json config file.`,
+  exampleValue: `/c/SourceCode/solo.json`,
 };
 
 export const commonOptions = { profile, configFilePath };

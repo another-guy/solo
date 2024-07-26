@@ -16,7 +16,7 @@ async function checkHealthAsyncCommand(this: any, str: any, options: any) {
     return;
   }
 
-  const cliConfigLocation = path.join(homeDir, '.fakemonorc.json');
+  const cliConfigLocation = path.join(homeDir, '.solorc.json');
   if (!fs.existsSync(cliConfigLocation)) {
     const message = `Config file not found at ${cliConfigLocation}.`;
     logger.error(message);

@@ -1,7 +1,7 @@
 {
-  "name": "fakemono",
+  "name": "solo",
   "version": "0.0.1",
-  "description": "For the lack of a monorepo nobody is stopping me to fakemonorepo!",
+  "description": "CLI tool by Igor Soloydenko for automating routine processes.",
   "main": "index.js",
   "scripts": {
     "start": "ts-node index.ts",
@@ -14,10 +14,12 @@
     "chalk": "^4.1.2",
     "cli-table3": "^0.6.5",
     "commander": "^12.1.0",
+    "semver": "^7.6.3",
     "ts-node": "^10.9.2",
     "typescript": "^5.4.5"
   },
   "devDependencies": {
-    "@types/node": "^20.14.5"
+    "@types/node": "^20.14.5",
+    "@types/semver": "^7.5.8"
   }
 }
