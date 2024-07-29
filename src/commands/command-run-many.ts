@@ -73,7 +73,7 @@ async function runManyAsyncCommand(this: any, str: any, options: any) {
       logger.error(`${dir}\n${error}`);
     }
   });
-  await Promise.all(commandPromises);
+  await Promise.allSettled(commandPromises);
 }
 
 export const command: CliCommandMetadata = {
