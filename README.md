@@ -1,21 +1,31 @@
 # README
 
-## Examples
+## Installation
 
-### Get help
+Currently, only installation from Git repo (sources) is available.
+The two steps below can be merged into one.
 
-```sh
-npm start -- --help
-```
+### Step 1: bash profile function
 
-### Run git command in all repos
-
-```sh
-npm start -- run-many -c /c/SourceCode/solo.json -t git --cmd "git status" --verbose
-```
-
-## Development notes
+Register script in `~/.bash_profile`
 
 ```sh
-npm run tsc -- --init   # with "tsc": "tsc" registered in "scripts"
+solo() {
+    sh <script_location>/solo.sh $1
+}
 ```
+
+## Step 2: npm-launching script
+
+`<script_location>/solo.sh`
+
+```sh
+#!/bin/bash
+
+        (cd <git_repo_directory> && npm start -- $@)
+# e.g.  (cd /c/SourceCode/solo   && npm start -- $@)
+```
+
+## Step 3: Verification
+
+Restart your terminal and run `solo help`.
