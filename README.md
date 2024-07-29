@@ -15,7 +15,7 @@ solo() {
 }
 ```
 
-## Step 2: npm-launching script
+### Step 2: npm-launching script
 
 `<script_location>/solo.sh`
 
@@ -26,6 +26,23 @@ solo() {
 # e.g.  (cd /c/SourceCode/solo   && npm start -- $@)
 ```
 
-## Step 3: Verification
+### Step 3: Verification
 
 Restart your terminal and run `solo help`.
+
+## Prerequisites
+
+No specific versions are known right now as official prerequisites.
+
+The tool has been tested/used under the following environment:
+
+```sh
+$ nvm --version
+1.1.11
+
+$ node --version
+v22.2.0
+
+$ npm --version
+10.7.0
+```
