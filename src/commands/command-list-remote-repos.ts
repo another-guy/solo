@@ -25,7 +25,8 @@ async function listRemoteReposAsyncCommand(this: any, str: any, options: any) {
   });
 
   if (listRepositoriesResponse.status < 200 && listRepositoriesResponse.status >= 300)
-    throw new Error(`!!!!!!!!!!!!!!!!!!!!!!!!!!!!!`);
+    // TODO: refactor into axios wrapper?
+    throw new Error(`Failed to list repositories. Status: ${listRepositoriesResponse.status}.`);
 
   const columnDefs = [
     { title: 'repo id', width: 38, selector: (repo: AdoRepository) => repo.id },

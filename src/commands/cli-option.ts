@@ -14,7 +14,7 @@ export interface CliOption {
   long: string;
   codeName: string;
   description: string;
-  exampleValue: string;
+  exampleValue?: string;
   defaultValue?: string;
 }
 
@@ -31,7 +31,7 @@ export const optionsToExamples = (options: CliOptionsSet) =>
 
 export function provideCliOptionExample(option: CliOption): string {
   const { short, long, exampleValue } = option;
-  return `${short ? `-${short}` : `--${long}`} ${exampleValue}`;
+  return `${short ? `-${short}` : `--${long}`} ${exampleValue || ''}`;
 }
 
 export function createCommandExample(commandMetadata: CliCommandMetadata): string {
