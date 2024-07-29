@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "ts-node index.ts",
+    "start-alt": "node -r ts-node/register index.ts",
     "tsc": "tsc"
   },
   "author": "Igor Soloydenko",
