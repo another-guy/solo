@@ -12,4 +12,5 @@ export const allCommands = [
   listDeploys,
   listRemoteRepos,
   runMany,
-];
+]
+  .sort((a, b) => a.name.localeCompare(b.name));

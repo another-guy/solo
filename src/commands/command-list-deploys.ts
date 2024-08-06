@@ -2,7 +2,7 @@ import { createExecutionContext, parseCommonOptions } from '../cli';
 import { commonAdoOptions } from './ado-options';
 import { CliCommandMetadata, CliOption } from './cli-option';
 
-const commandName = `list-deploys`;
+const commandName = `ado-list-deploys`;
 
 const pipelines: CliOption = {
   short: 'TODO:rename',

@@ -9,7 +9,7 @@ import { execAsync, execAsyncFor, neverThrow } from '../exec-promise';
 import { compareSeverity, NpmAuditResult, NpmAuditVulnerability, NpmLsDependency, NpmLsResponse, NpmOutatedPackageResult, NpmOutdatedResult, NpmViewResponse, PackageJson } from '../types';
 import { CliCommandMetadata, CliOption, CliOptionsSet } from './cli-option';
 
-const commandName = 'audit-npm';
+const commandName = 'npm-audit';
 
 const directoryOption: CliOption = {
   short: 'd',
@@ -20,16 +20,26 @@ const directoryOption: CliOption = {
   defaultValue: process.cwd(),
 };
 
+const omitOptions: CliOption = {
+  short: 'o',
+  long: 'omit',
+  codeName: 'omit',
+  description: 'omits packages by type (dev, optional, peer).',
+  exampleValue: 'dev,optional,peer',
+  defaultValue: process.cwd(),
+};
+
 const auditCommandOptions: CliOptionsSet = {
   directoryOption,
+  omitOptions,
 };
 
 async function auditAsyncCommand(this: any, str: any, options: any) {
   const executionContext = createExecutionContext(parseCommonOptions(options));
-  const { directory } = str;
+  const { directory, omit } = str;
   const { logger } = executionContext;
 
-  logger.verbose(`Analyzing the directory: ${directory}`);
+  logger.verbose(`Analyzing the directory: ${directory}. Omitting packages: ${omit}`);
 
   const packageJsonPath = join(directory, 'package.json');
   if (!fs.existsSync(packageJsonPath)) {
@@ -51,9 +61,10 @@ async function auditAsyncCommand(this: any, str: any, options: any) {
       logger.verbose('node_modules found.');
     }
 
-    const npmOutdatedResult = await execAsyncFor<NpmOutdatedResult>("npm outdated --json", { cwd: directory });
+    const npmOutdatedResult = await execAsyncFor<NpmOutdatedResult>(`npm outdated --json`, { cwd: directory });
 
-    const npmAuditResult = await execAsyncFor<NpmAuditResult>("npm audit --json", { cwd: directory, throwOnCode: neverThrow });
+    const omitFilter = omit ? (omit + '').split(',').map(o => `--omit ${o}`).join(' ') : '';
+    const npmAuditResult = await execAsyncFor<NpmAuditResult>(`npm audit --json  ${omitFilter}`, { cwd: directory, throwOnCode: neverThrow });
     logger.verbose(JSON.stringify(npmAuditResult, null, 2));
 
     const vulnerablePackages = Object.values(npmAuditResult.vulnerabilities);
@@ -163,7 +174,7 @@ async function auditAsyncCommand(this: any, str: any, options: any) {
         },
         {
           title: 'dependency tree',
-          selector: v => v.isDirect ? '<direct>' : formatIndirect(indirectPackageLs[v.name]),
+          selector: v => v.isDirect ? '<direct>' : formatIndirect(dependencies, devDependencies, indirectPackageLs[v.name]),
           width: 60,
         },
       ],
@@ -189,7 +200,15 @@ const severityColors = {
   critical: chalk.magenta,
 };
 
-function formatIndirect(result?: NpmLsResponse): string {
+function formatIndirect(
+  deps: {
+    [packageName: string]: string;
+  },
+  devDeps: {
+    [packageName: string]: string;
+  },
+  result?: NpmLsResponse,
+): string {
   if (!result) return '[bad npm ls response]';
   if (!result.dependencies) return '—';
 
@@ -199,14 +218,28 @@ function formatIndirect(result?: NpmLsResponse): string {
 
   function traverse(dependencies: { [p: string]: NpmLsDependency }, level: number = 0): void {
     Object.entries(dependencies).forEach(([name, npmLsDependency]) => {
-      lines.push(indent(name, level));
+
+      const kind =
+        level !== 0 ? 'indirect' :
+          deps.hasOwnProperty(name) ? 'prod' :
+            devDeps.hasOwnProperty(name) ? 'dev' :
+              'other';
+
+      const color =
+        kind === 'prod' ? chalk.red :
+          kind === 'dev' ? chalk.yellow :
+            chalk.gray;
+
+      lines.push(color(indent(name, level, kind)));
       if (npmLsDependency.dependencies)
         traverse(npmLsDependency.dependencies, level + 1);
     });
   }
 
-  function indent(s: string, level: number): string {
+  function indent(s: string, level: number, kind: 'dev' | 'prod' | 'indirect' | 'other'): string {
     const offset = 2;
+    if (level === 0)
+      return `[${kind}] ` + ' '.repeat(level * offset) + s;
     return ' '.repeat(level * offset) + s;
   }
 }

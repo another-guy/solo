@@ -5,7 +5,7 @@ import { AdoListRepositoriesResponse, AdoRepository } from '../types';
 import { commonAdoOptions } from './ado-options';
 import { CliCommandMetadata } from './cli-option';
 
-const commandName = `list-remote-repos`;
+const commandName = `ado-list-remote-repos`;
 
 const listRemoteReposCommandOptions = {
   ...commonAdoOptions,

@@ -3,7 +3,7 @@ import path from 'path';
 import { createExecutionContext, parseCommonOptions } from '../cli';
 import { CliCommandMetadata } from './cli-option';
 
-const commandName = `check-health`;
+const commandName = `solo-check-health`;
 
 async function checkHealthAsyncCommand(this: any, str: any, options: any) {
   const executionContext = createExecutionContext(parseCommonOptions(options));

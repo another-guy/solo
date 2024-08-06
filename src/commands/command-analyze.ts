@@ -8,7 +8,7 @@ import { never } from '../typescript';
 import { CliOption, CliCommandMetadata, CliOptionsSet } from './cli-option';
 import { commonOptions } from './common-options';
 
-const commandName = 'analyze';
+const commandName = 'mono-analyze';
 
 const directoryOption: CliOption = {
   short: 'd',

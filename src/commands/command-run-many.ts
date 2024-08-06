@@ -10,7 +10,7 @@ import { execAsync, nonZeroCode } from '../exec-promise';
 
 type CommandType = 'dir' | 'git' | 'npm' | 'dotnet';
 
-const commandName = `run-many`;
+const commandName = `mono-run-many`;
 
 const commandType: CliOption = {
   short: 't',
@@ -78,7 +78,7 @@ async function runManyAsyncCommand(this: any, str: any, options: any) {
 
 export const command: CliCommandMetadata = {
   name: commandName,
-  description: `run a command against multiple projects.`,
+  description: `Run a command against multiple projects.`,
   options: runManyCommandOptions,
   impl: runManyAsyncCommand,
 }
