@@ -2,7 +2,7 @@ export interface CliCommandMetadata {
   name: string;
   description: string;
   options: CliOptionsSet;
-  impl: (this: any, str: any, options: any) => Promise<void>;
+  impl: (this: any, str: any, options: any) => Promise<string | void>;
 }
 
 export interface CliOptionsSet {

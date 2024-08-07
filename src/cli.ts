@@ -89,7 +89,9 @@ function registerCommand(programCommand: Command, commandMetadata: CliCommandMet
 
   command
     .addHelpText('after', formatExample(createCommandExample(commandMetadata)))
-    .action(commandMetadata.impl);
+    .action((...args: [str: any, options: any]) => {
+      commandMetadata.impl.apply(null, args);
+    });
 
   function formatExample(...lines: string[]): string {
     return `
