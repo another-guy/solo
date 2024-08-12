@@ -4,7 +4,7 @@ import { execAsync, nonZeroCode } from '../exec-promise';
 import { exportWorkspace } from '../load-workspace';
 import { ProjectDef } from '../types';
 import { never } from '../typescript/never';
-import { CliCommandMetadata, CliOption } from './cli-option';
+import { CliCommandMetadata, CliCommandPolyResult, CliOption } from './cli-option';
 import { commonOptions } from './common-options';
 
 type CommandType = 'dir' | 'git' | 'npm' | 'dotnet';
@@ -70,7 +70,7 @@ export async function runManyAsyncCommand(this: any, str: StrParams, options: an
     } :
     () => true;
 
-  let collectedOutputs = '';
+  let collectedOutputs: CliCommandPolyResult = {};
 
   const filteredProjects = workspace.projects.filter(p => projectProfileFilterFn(p) && projectFilterFn(p));
   logger.logHighlight(`Running command "${cmd}" in ${filteredProjects.length} projects.`);
@@ -88,23 +88,27 @@ export async function runManyAsyncCommand(this: any, str: StrParams, options: an
       const stdout = await execAsync(cmd, { cwd: dir, throwOnCode: nonZeroCode });
 
       const text = `${dir}\n${stdout}`;
-      logger.log(text);
-      collectedOutputs += text;
+      //logger.log(text);
+
+      collectedOutputs[dir] = { hasError: false, output: stdout };
     } catch (error) {
       const text = `${dir}\n${error}`;
       logger.error(text);
-      collectedOutputs += text;
+
+      collectedOutputs[dir] = { hasError: true, output: error + '' };
     }
   });
 
-  if (sequentially) {
-    for (let i = 0; i < commandPromises.length; i++)
-      await commandPromises[i];
-  } else {
+  // if (sequentially) {
+  //   for (let i = 0; i < commandPromises.length; i++)
+  //     await commandPromises[i];
+  //   return collectedOutputs;
+  // }
+  // else
+  // {
     await Promise.allSettled(commandPromises);
-  }
-
-  return collectedOutputs;
+    return collectedOutputs;
+  // }
 }
 
 export const command: CliCommandMetadata = {

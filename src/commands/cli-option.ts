@@ -2,7 +2,15 @@ export interface CliCommandMetadata {
   name: string;
   description: string;
   options: CliOptionsSet;
-  impl: (this: any, str: any, options: any) => Promise<string | void>;
+  impl: (this: any, str: any, options: any) => Promise<CliCommandPolyResult | undefined | void>;
+}
+
+export type CliCommandPolyResult = {
+  [_: string]: CliCommandResult;
+};
+export interface CliCommandResult {
+  hasError: boolean;
+  output: string;
 }
 
 export interface CliOptionsSet {

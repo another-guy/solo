@@ -35,7 +35,7 @@ export function execAsync(command: string, options?: Options): Promise<string> {
       { cwd, env },
       (error, stdout, stderr) => {
         if (error && error.code && throwOnCode?.(error.code)) {
-          reject(JSON.stringify({ error }));
+          reject(JSON.stringify({ error, stderr }, null, 2));
         } else {
           resolve(stdout);
         }
