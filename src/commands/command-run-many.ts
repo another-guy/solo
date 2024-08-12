@@ -34,12 +34,21 @@ const sequentially: CliOption = {
   exampleValue: `true`,
 };
 
+const quiet: CliOption = {
+  short: 'q',
+  long: `quiet`,
+  codeName: `quiet`,
+  description: `suppress output.`,
+  exampleValue: `true`,
+};
+
 const runManyCommandOptions = {
   profile: commonOptions.profile,
   configFilePath: commonOptions.configFilePath,
   commandType,
   cmd,
   sequentially,
+  quiet,
 };
 
 interface StrParams {
@@ -48,11 +57,12 @@ interface StrParams {
   type: CommandType | undefined;
   cmd: string;
   sequentially: boolean;
+  quiet: boolean;
 }
 
 export async function runManyAsyncCommand(this: any, str: StrParams, options: any) {
   const executionContext = createExecutionContext(parseCommonOptions(options));
-  const { profile: profileName, config: configFilePath, type: commandTypeRaw, cmd, sequentially } = str;
+  const { profile: profileName, config: configFilePath, type: commandTypeRaw, cmd, sequentially, quiet } = str;
   const commandType = commandTypeRaw;
   const workspace = await exportWorkspace(configFilePath, executionContext);
   const { logger } = executionContext;
@@ -88,27 +98,27 @@ export async function runManyAsyncCommand(this: any, str: StrParams, options: an
       const stdout = await execAsync(cmd, { cwd: dir, throwOnCode: nonZeroCode });
 
       const text = `${dir}\n${stdout}`;
-      //logger.log(text);
+      if (!quiet)
+        logger.log(text);
 
       collectedOutputs[dir] = { hasError: false, output: stdout };
     } catch (error) {
       const text = `${dir}\n${error}`;
-      logger.error(text);
+      if (!quiet)
+        logger.error(text);
 
       collectedOutputs[dir] = { hasError: true, output: error + '' };
     }
   });
 
-  // if (sequentially) {
-  //   for (let i = 0; i < commandPromises.length; i++)
-  //     await commandPromises[i];
-  //   return collectedOutputs;
-  // }
-  // else
-  // {
+  if (sequentially) {
+    for (let i = 0; i < commandPromises.length; i++)
+      await commandPromises[i];
+    return collectedOutputs;
+  } else {
     await Promise.allSettled(commandPromises);
     return collectedOutputs;
-  // }
+  }
 }
 
 export const command: CliCommandMetadata = {

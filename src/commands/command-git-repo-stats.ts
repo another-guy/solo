@@ -22,8 +22,6 @@ async function analyzeAsyncCommand(this: any, str: any, options: any) {
 
   console.log(chalk.green(`Analyzing ${JSON.stringify(str)}`));
 
-  // const cmd = `git log | grep '^Author\: ' | cut -d ' ' -f 2-3 | sort | uniq -c | sort -rn`;
-
   const authorsResponse = await runManyAsyncCommand(
     {
       type: 'git',
@@ -31,6 +29,7 @@ async function analyzeAsyncCommand(this: any, str: any, options: any) {
       config: configFilePath,
       profile,
       sequentially: false,
+      quiet: true,
     },
     options,
   );
@@ -83,16 +82,18 @@ async function analyzeAsyncCommand(this: any, str: any, options: any) {
         {} as { [team: string]: number },
       );
     const total = Object.values(teamStatObject).reduce((sum, count) => sum + count, 0);
-    const orderedTeamStatList = Object
-      .entries(teamStatObject)
-      .reduce(
-        (result, [team, count]) => {
-          result.push({ team, count, ratio: Math.round(count / total * 100) });
-          return result;
-        },
-        [] as { team: string, count: number, ratio: number }[],
-      )
-      .sort(reverseComparator((teamStatsA, teamStatsB) => compareNumbers(teamStatsA.count, teamStatsB.count)));
+    const orderedTeamStatList = sort(
+      Object
+        .entries(teamStatObject)
+        .reduce(
+          (result, [team, count]) => {
+            result.push({ team, count, ratio: Math.round(count / total * 100) });
+            return result;
+          },
+          [] as { team: string, count: number, ratio: number }[],
+        ),
+      reverseComparator((teamStatsA, teamStatsB) => compareNumbers(teamStatsA.count, teamStatsB.count)),
+    );
 
     const allStats = {
       dir,
