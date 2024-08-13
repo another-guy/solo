@@ -47,6 +47,21 @@ $ npm --version
 10.7.0
 ```
 
+## Roadmap
+
+* Monorepo
+  * [ ] `mono-analyze`
+  * [x] `mono-run-many`
+* Git
+  * [x] `git-repo-stats`
+* NPM
+  * [x] `npm-audit`
+* ADO
+  * [x] `ado-list-remote-repos`
+  * [ ] `ado-list-deploys`
+* Self-diagnostic
+  * [ ] `solo-check-health`
+
 ## Examples
 
 ```sh
