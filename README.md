@@ -50,7 +50,7 @@ $ npm --version
 ## Roadmap
 
 * Monorepo
-  * [ ] `mono-analyze`
+  * [x] `mono-analyze`
   * [x] `mono-run-many`
 * Git
   * [x] `git-repo-stats`
@@ -60,10 +60,14 @@ $ npm --version
   * [x] `ado-list-remote-repos`
   * [ ] `ado-list-deploys`
 * Self-diagnostic
-  * [ ] `solo-check-health`
+  * [x] `solo-check-health`
 
 ## Examples
 
 ```sh
+npm start -- help
+
+npm start -- help git-repo-stats
+
 npm start -- git-repo-stats -p 4s-ownership -c /c/SourceCode/solo.json -a 2024-01-01
 ```
