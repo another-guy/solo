@@ -50,5 +50,5 @@ $ npm --version
 ## Examples
 
 ```sh
-npm start -- git-repo-stats -c /c/SourceCode/solo.json
+npm start -- git-repo-stats -p 4s-ownership -c /c/SourceCode/solo.json -a 2024-01-01
 ```

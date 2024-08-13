@@ -2,31 +2,58 @@ import chalk from 'chalk';
 import { compareNumbers, compareStrings, reverseComparator, sort } from '../algos/sort';
 import { createExecutionContext, parseCommonOptions } from '../cli';
 import { renderTable } from '../cli/render-table';
-import { NormalizingReplacement, TeamMappings, teams as teamsJson } from '../data/teams';
+import { NormalizingReplacement, TeamMappings, TeamName, teams as teamsJson } from '../data/teams';
 import { exportWorkspace } from '../load-workspace';
-import { CliCommandMetadata, CliOptionsSet } from './cli-option';
+import { CliCommandMetadata, CliOption, CliOptionsSet } from './cli-option';
 import { runManyAsyncCommand } from './command-run-many';
 import { commonOptions } from './common-options';
 
 const commandName = 'git-repo-stats';
 
+const after: CliOption = {
+  short: 'a',
+  long: 'after',
+  codeName: 'after',
+  description: 'Date after which to analyze the commits.',
+  defaultValue: '',
+  exampleValue: '2024-01-01',
+};
+
+const before: CliOption = {
+  short: 'b',
+  long: 'before',
+  codeName: 'before',
+  description: 'Date before which to analyze the commits.',
+  defaultValue: '',
+  exampleValue: '2024-06-01',
+};
+
 const analyzeCommandOptions: CliOptionsSet = {
   profile: commonOptions.profile,
   configFilePath: commonOptions.configFilePath,
+  after,
+  before,
 };
 
 async function analyzeAsyncCommand(this: any, str: any, options: any) {
   const executionContext = createExecutionContext(parseCommonOptions(options));
-  const { profile, config: configFilePath } = str;
+  const { profile, config: configFilePath, after: afterDate, before: beforeDate } = str;
   const workspace = await exportWorkspace(configFilePath, executionContext);
   const { logger } = executionContext;
 
   console.log(chalk.green(`Analyzing ${JSON.stringify(str)}`));
 
+  const jcGitLogCmd = [
+    `python -m jc git log`,
+    afterDate ? `--after="${afterDate}"` : undefined,
+    beforeDate ? `--before="${beforeDate}"` : undefined,
+  ]
+    .filter(Boolean)
+    .join(' ');
   const authorsResponse = await runManyAsyncCommand(
     {
       type: 'git',
-      cmd: `python -m jc git log --after="2024-01-01"`,
+      cmd: jcGitLogCmd,
       config: configFilePath,
       profile,
       sequentially: false,
@@ -118,12 +145,7 @@ async function analyzeAsyncCommand(this: any, str: any, options: any) {
     return allStats;
   });
 
-  // const nonStandardAuthorNames =
-  //   sort(
-  //     Array.from(uniqueAuthors),
-  //     compareStrings,
-  //   )
-  //     .filter((author) => nonstandardGitAuthorName(author, teamMemberNameExceptions));
+  const allAggregatedStatsSorted = sort(allAggregatedStats, (a, b) => compareStrings(a.dir, b.dir));
 
   const nonStandardAuthorNameList = Object
     .entries(nonStandardAuthorNames)
@@ -134,7 +156,7 @@ async function analyzeAsyncCommand(this: any, str: any, options: any) {
 
 
   const totalResult = {
-    allAggregatedStats,
+    allAggregatedStats: allAggregatedStatsSorted,
     nonStandardAuthorNames: nonStandardAuthorNameList,
     membersWithUnknownTeam: sort(Array.from(membersWithUnknownTeam), compareStrings),
   };
@@ -148,21 +170,33 @@ async function analyzeAsyncCommand(this: any, str: any, options: any) {
       },
       {
         title: 'author',
-        selector: v => v.orderedAuthorStatsList.map(({ author, count }) => `${author} (${count})`).join('\n'),
+        selector: v => {
+          return v
+            .orderedAuthorStatsList
+            .map(({ author, count }) => {
+              const team = memberToTeam[author] || 'other';
+              const color = teamColors[team as TeamName];
+              return `${pad(count, 4)}  ${color(author)}`;
+            })
+            .join('\n');
+        },
         width: 40,
       },
       {
         title: 'team',
-        selector: v => v.orderedTeamStatList.map(({ team, count, ratio }) => `${team} (${count} ${ratio}%)`).join('\n'),
-        width: 60,
+        selector: v => v.orderedTeamStatList.map(({ team, count, ratio }) => `${teamColors[team as TeamName](team)}`).join('\n'),
+        width: 40,
+      },
+      {
+        title: 'team-stats',
+        selector: v => v.orderedTeamStatList.map(({ team, count, ratio }) => `${pad(ratio, 3)}% (${pad(count, 3)})`).join('\n'),
+        width: 15,
       },
     ],
     totalResult.allAggregatedStats,
     {
-      chars: {
-        top: '-', 'top-left': '-', 'top-mid': '-', 'top-right': '-',
-      },
-      style: undefined,
+      chars: { bottom: '-' },
+      style: {},
     },
   ));
 
@@ -201,7 +235,7 @@ function normalize(author: string, normalizingReplacements: NormalizingReplaceme
 function pivot(teamMappings: TeamMappings, normalizingReplacements: NormalizingReplacement[]): { [member: string]: string } {
   const result: { [member: string]: string } = {};
   for (const teamName of Object.keys(teamMappings))
-    for (const member of teamMappings[teamName])
+    for (const member of teamMappings[teamName as TeamName])
       result[normalize(member, normalizingReplacements)] = teamName;
   return result;
 }
@@ -224,4 +258,25 @@ interface GitLogEntry {
   message: string;
   epoch: number;
   epoch_utc: null;
+}
+
+function pad(s: any, n: number): string {
+  return `${s}`.padStart(n, ' ');
+}
+
+const teamColors: { [team in TeamName]: chalk.Chalk } = {
+  "4platform: core-services": chalk.red,
+  "4platform: integ & system design": chalk.green,
+  "4rent": chalk.yellow,
+  "4services: 4vendors": chalk.blue,
+  "4services: turn": chalk.magenta,
+  "4services: maintenance-experience": chalk.cyan,
+  "4resident-management": chalk.redBright,
+  "4apply": chalk.greenBright,
+  "4properties": chalk.yellowBright,
+  "devops": chalk.blueBright,
+  "fuzzy": chalk.grey,
+  "architects": chalk.grey,
+  "developer-left": chalk.grey,
+  "other": chalk.grey,
 }

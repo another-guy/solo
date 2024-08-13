@@ -10,9 +10,25 @@ export interface NormalizingReplacement {
   log?: boolean;
 };
 
-export interface TeamMappings {
-  [teamName: string]: string[];
+export type TeamMappings = {
+  [teamName in TeamName]: string[];
 }
+
+export type TeamName =
+  | "4platform: core-services"
+  | "4platform: integ & system design"
+  | "4rent"
+  | "4services: 4vendors"
+  | "4services: turn"
+  | "4services: maintenance-experience"
+  | "4resident-management"
+  | "4apply"
+  | "4properties"
+  | "devops"
+  | "fuzzy"
+  | "architects"
+  | "developer-left"
+  | "other";
 
 export const teams: TeamsJson = {
   normalizingReplacements: [
@@ -78,11 +94,11 @@ export const teams: TeamsJson = {
     },
     {
       find: "^cristian$",
-      replaceWith: "cristian martinez"
+      replaceWith: "cristian caro"
     },
     {
       find: "cristian alexis caro martinez",
-      replaceWith: "cristian martinez"
+      replaceWith: "cristian caro"
     },
     {
       find: "cnoblett_ah4r",
@@ -207,16 +223,32 @@ export const teams: TeamsJson = {
     {
       find: "mateusz w�jcik",
       replaceWith: "mateusz wojcik"
+    },
+    {
+      find: "^doug jones$",
+      replaceWith: "douglas jones"
+    },
+    {
+      find: "^harshitha tokala \\(admin\\)$",
+      replaceWith: "harshitha tokala"
+    },
+    {
+      find: "vishal praanesh kole purushotham",
+      replaceWith: "vishal purushotham"
+    },
+    {
+      find: "lokesh reddy pulagam",
+      replaceWith: "lokesh pulagam"
     }
   ],
   teamMappings: {
-    "4platform-core-services": [
+    "4platform: core-services": [
       "Julio Castellanos",
       "Miroslaw Piatkowski",
       "Karol Partyka",
       "Mykola Reshetynskyi"
     ],
-    "4platform-integ-system-design": [
+    "4platform: integ & system design": [
       "Greg Matysiak",
       "Elijah Myers",
       "Michal Jach"
@@ -227,21 +259,21 @@ export const teams: TeamsJson = {
       "Sebastian Brzeszcz",
       "Cristian Caro"
     ],
-    "4services-4vendors": [
+    "4services: 4vendors": [
       "Evgenii Vilkov",
       "Igor Soloydenko",
       "Mateusz Lisowski",
       "Pawel Kalinowski",
       "Chad Vogel"
     ],
-    "4services-4turn": [
+    "4services: turn": [
       "Przemyslaw Turczynski",
       "Kelly Corrigan",
       "Andrzej Lenart",
       "Rafal Pawlik",
       "Zbigniew Winiarski"
     ],
-    "4services-4maintenance-experience": [
+    "4services: maintenance-experience": [
       "Michal Rybka",
       "Maksym Bondarchuk",
       "Mateusz Boroch",
@@ -263,7 +295,7 @@ export const teams: TeamsJson = {
       "Luis Roca",
       "Michal Musiol"
     ],
-    "devops-team": [
+    "devops": [
       "Brandon Higgins",
       "Eldiar Kasmambetov",
       "Robert Dolega"
@@ -278,6 +310,8 @@ export const teams: TeamsJson = {
     "developer-left": [
       "christian niedermayer",
       "elijah prince",
+    ],
+    "other": [
     ]
   },
   teamMemberNameExceptions: [],
