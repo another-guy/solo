@@ -46,3 +46,9 @@ v22.2.0
 $ npm --version
 10.7.0
 ```
+
+## Examples
+
+```sh
+npm start -- git-repo-stats -c /c/SourceCode/solo.json
+```
