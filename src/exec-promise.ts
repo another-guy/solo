@@ -1,3 +1,4 @@
+import { createQueue } from './simple-queue';
 import { exec as execChildProcess } from 'child_process';
 
 export interface Options {
@@ -17,6 +18,9 @@ export const neverThrow = (_: number) => false;
 
 // TODO: FIXME: the `execAsync` and `execAsyncFor` methods may be contributing to BSODs.
 // Maybe having a limit on how many processes are spawened at once is going to help avoiding BSODs.
+function x(): void {
+  const { isEmpty } = createQueue<string>();
+}
 
 export async function execAsyncFor<T>(command: string, options?: Options): Promise<T> {
   return JSON.parse(await execAsync(command, options));
@@ -31,7 +35,7 @@ export function execAsync(command: string, options?: Options): Promise<string> {
       { cwd, env },
       (error, stdout, stderr) => {
         if (error && error.code && throwOnCode?.(error.code)) {
-          reject(JSON.stringify({ error }));
+          reject(JSON.stringify({ error, stderr }, null, 2));
         } else {
           resolve(stdout);
         }

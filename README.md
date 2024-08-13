@@ -46,3 +46,24 @@ v22.2.0
 $ npm --version
 10.7.0
 ```
+
+## Roadmap
+
+* Monorepo
+  * [ ] `mono-analyze`
+  * [x] `mono-run-many`
+* Git
+  * [x] `git-repo-stats`
+* NPM
+  * [x] `npm-audit`
+* ADO
+  * [x] `ado-list-remote-repos`
+  * [ ] `ado-list-deploys`
+* Self-diagnostic
+  * [ ] `solo-check-health`
+
+## Examples
+
+```sh
+npm start -- git-repo-stats -p 4s-ownership -c /c/SourceCode/solo.json -a 2024-01-01
+```
