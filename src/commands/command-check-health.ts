@@ -31,21 +31,27 @@ async function checkHealthAsyncCommand(this: any, str: any, options: any) {
     return;
   }
 
+  const errorList: { isError: boolean, message: string }[] = [];
+
   // TODO: use JSON validator instead
   const { login, token, org, proj } = ado;
-  if (!login || !token) {
-    const message = 'login or token were not found in ADO config or were empty.';
-    logger.error(message);
-    return;
-  }
+  if (!login || !token)
+    errorList.push({ isError: true, message: 'login or token were not found in ADO config or were empty.' });
+  else
+    errorList.push({ isError: false, message: 'ADO config successfully validated.' });
 
-  logger.log('ADO config successfully validated.');
+  errorList.forEach((error) => {
+    if (error.isError) {
+      logger.error(error.message);
+    } else {
+      logger.logHighlight(error.message);
+    }
+  });
 };
 
 export const command: CliCommandMetadata = {
   name: commandName,
-  description:
-`Self-check the health of the CLI tool.
+  description: `Self-check the health of the CLI tool.
 Validates the presence and the correctness of the config.`,
   options: {},
   impl: checkHealthAsyncCommand,
