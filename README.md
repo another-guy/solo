@@ -59,6 +59,8 @@ $ npm --version
 * ADO
   * ✅ `ado-list-remote-repos`
   * 🧠 `ado-list-deploys`
+* SCV
+  * ✅ `csv-stats`
 * Self-diagnostic
   * ✅ `solo-check-health`
 
