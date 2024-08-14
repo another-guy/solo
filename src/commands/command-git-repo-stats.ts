@@ -1,6 +1,7 @@
 import chalk from 'chalk';
 import { compareNumbers, compareStrings, reverseComparator, sort } from '../algos/sort';
 import { createExecutionContext, parseCommonOptions } from '../cli';
+import { pad } from '../cli/pad';
 import { renderTable } from '../cli/render-table';
 import { NormalizingReplacement, TeamMappings, TeamName, teams as teamsJson } from '../data/teams';
 import { exportWorkspace } from '../load-workspace';
@@ -248,8 +249,6 @@ This command depends on jc to be installed from https://github.com/kellyjonbrazi
   impl: analyzeAsyncCommand,
 }
 
-
-
 interface GitLogEntry {
   commit: string;
   author: string;
@@ -258,10 +257,6 @@ interface GitLogEntry {
   message: string;
   epoch: number;
   epoch_utc: null;
-}
-
-function pad(s: any, n: number): string {
-  return `${s}`.padStart(n, ' ');
 }
 
 const teamColors: { [team in TeamName]: chalk.Chalk } = {
