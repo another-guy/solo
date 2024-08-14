@@ -50,17 +50,21 @@ $ npm --version
 ## Roadmap
 
 * Monorepo
-  * [x] `mono-analyze`
-  * [x] `mono-run-many`
+  * ✅ `mono-analyze`
+  * ✅ `mono-run-many`
 * Git
-  * [x] `git-repo-stats`
+  * ✅ `git-repo-stats`
 * NPM
-  * [x] `npm-audit`
+  * ✅ `npm-audit`
 * ADO
-  * [x] `ado-list-remote-repos`
-  * [ ] `ado-list-deploys`
+  * ✅ `ado-list-remote-repos`
+  * 🧠 `ado-list-deploys`
 * Self-diagnostic
-  * [x] `solo-check-health`
+  * ✅ `solo-check-health`
+
+🧠 — ideation.
+🔨 — in development.
+✅ — usable (implemented in some form).
 
 ## Examples
 
