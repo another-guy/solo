@@ -168,10 +168,6 @@ async function csvStatsCommand(this: any, str: any, options: any) {
         },
       ],
       Object.entries(result),
-      {
-        chars: {},
-        style: {},
-      },
     ),
   );
 }

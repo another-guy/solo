@@ -42,6 +42,14 @@ const quiet: CliOption = {
   exampleValue: `true`,
 };
 
+const statusCodes: CliOption = {
+  short: 'sc',
+  long: `status-codes`,
+  codeName: `statusCodes`,
+  description: `status codes to consider as success (othan than 0).`,
+  exampleValue: `1,2,3`,
+};
+
 const runManyCommandOptions = {
   profile: commonOptions.profile,
   configFilePath: commonOptions.configFilePath,
@@ -49,6 +57,7 @@ const runManyCommandOptions = {
   cmd,
   sequentially,
   quiet,
+  statusCodes,
 };
 
 interface StrParams {
@@ -58,11 +67,12 @@ interface StrParams {
   cmd: string;
   sequentially: boolean;
   quiet: boolean;
+  statusCodes?: string;
 }
 
 export async function runManyAsyncCommand(this: any, str: StrParams, options: any) {
   const executionContext = createExecutionContext(parseCommonOptions(options));
-  const { profile: profileName, config: configFilePath, type: commandTypeRaw, cmd, sequentially, quiet } = str;
+  const { profile: profileName, config: configFilePath, type: commandTypeRaw, cmd, sequentially, quiet, statusCodes } = str;
   const commandType = commandTypeRaw;
   const workspace = await exportWorkspace(configFilePath, executionContext);
   const { logger } = executionContext;
@@ -95,7 +105,11 @@ export async function runManyAsyncCommand(this: any, str: StrParams, options: an
 
     try {
       logger.verbose(`Executing command "${cmd}" in "${dir}"`)
-      const stdout = await execAsync(cmd, { cwd: dir, throwOnCode: nonZeroCode });
+
+      const throwOnCode = statusCodes ?
+        (code: number) => !statusCodes.split(',').map(Number).includes(code) :
+        nonZeroCode;
+      const stdout = await execAsync(cmd, { cwd: dir, throwOnCode: throwOnCode });
 
       const text = `${dir}\n${stdout}`;
       if (!quiet)

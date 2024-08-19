@@ -195,10 +195,6 @@ async function analyzeAsyncCommand(this: any, str: any, options: any) {
       },
     ],
     totalResult.allAggregatedStats,
-    {
-      chars: { bottom: '-' },
-      style: {},
-    },
   ));
 
   if (nonStandardAuthorNameList.length)
