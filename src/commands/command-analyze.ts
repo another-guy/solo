@@ -15,7 +15,7 @@ const directoryOption: CliOption = {
   long: 'directory',
   codeName: 'directory',
   description: 'directory to analyze as the monorepo.',
-  exampleValue: '/c/SourceCode',
+  exampleValue: '/c/SourceCode/mono',
   defaultValue: process.cwd(),
 };
 
