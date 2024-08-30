@@ -3,10 +3,12 @@ import chalk from 'chalk';
 import { readdir } from 'fs/promises';
 import * as path from 'path';
 import { createExecutionContext, parseCommonOptions } from '../cli';
-import { exportWorkspace, hasIncompleteConfig } from '../load-workspace';
+import { exportWorkspace, hasIssuesInConfig, ConfigIssues } from '../load-workspace';
 import { never } from '../typescript';
 import { CliOption, CliCommandMetadata, CliOptionsSet } from './cli-option';
 import { commonOptions } from './common-options';
+import { renderTable } from '../cli/render-table';
+import { createComparator } from '../algos/sort';
 
 const commandName = 'mono-analyze';
 
@@ -40,17 +42,18 @@ async function analyzeAsyncCommand(this: any, str: any, options: any) {
     logger.verbose(subDir);
   });
 
-  const incompleteConfigDirs: string[] = [];
+  const incompleteConfigDirs: Map<string, ConfigIssues> = new Map();
   const declaredGitDirs =
     workspace.projects
       .map((projectDef) => {
         const projectDir = join(workspace.root, projectDef.gitDir);
-        if (hasIncompleteConfig(projectDef))
-          incompleteConfigDirs.push(projectDir);
+        const configIssues = hasIssuesInConfig(projectDef);
+        if (configIssues)
+          incompleteConfigDirs.set(projectDir, configIssues);
         return projectDir;
       })
       .sort(nameSort);
-  incompleteConfigDirs.sort(nameSort);
+  // incompleteConfigDirs.sort(nameSort);
 
   logger.verbose('Declared project directories:');
   declaredGitDirs.forEach((gitDir) => {
@@ -64,20 +67,20 @@ async function analyzeAsyncCommand(this: any, str: any, options: any) {
   });
 
   const allDirs = Array.from(new Set([...subdirectoriesFound, ...declaredGitDirs]));
-  logger.log('All directories:');
-  allDirs.forEach((dir) => {
+
+  const rows: Row[] = allDirs.map((dir) => {
     const isDeclared = declaredGitDirs.includes(dir);
     const isFound = subdirectoriesFound.includes(dir);
     const isIgnored = ignoreDirs.includes(dir);
-    const isIncompleteConfig = incompleteConfigDirs.includes(dir);
+    const configIssues = incompleteConfigDirs.get(dir);
 
-    const status =
-      isFound && isIgnored ? 'IGNORED' :
-        isFound && isDeclared && isIncompleteConfig ? 'MISCONFIGURED' :
-          isFound && isDeclared ? 'READY' :
-            isFound && !isDeclared ? 'UNREGISTERED' :
-              !isFound && isDeclared ? 'MISSING' :
-                never();
+    const [status, text] =
+      isFound && isIgnored ? ['IGNORED', undefined] as const :
+        isFound && isDeclared && configIssues ? ['MISCONFIGURED', configIssues] as const :
+          isFound && isDeclared ? ['READY', undefined] as const :
+            isFound && !isDeclared ? ['UNREGISTERED', undefined] as const :
+              !isFound && isDeclared ? ['MISSING', undefined] as const :
+                [never(), never()] as const;
 
     const statusColor = {
       READY: chalk.greenBright,
@@ -87,8 +90,43 @@ async function analyzeAsyncCommand(this: any, str: any, options: any) {
       MISSING: chalk.yellow,
     }[status];
 
-    logger.log(statusColor(status), dir);
+    // logger.log(statusColor(status + (text ? ` ${text}` : '')), dir);
+    return {
+      dir,
+      statusColor,
+      status,
+      configIssues,
+    };
   });
+
+  const compareStatus = createComparator(['MISSING', 'UNREGISTERED', 'MISCONFIGURED', 'IGNORED', 'READY']);
+  const sortedRows = rows.sort((row1, row2) => compareStatus(row1.status, row2.status));
+
+  console.log(
+    renderTable<Row>(
+      [
+        {
+          title: 'Directory',
+          width: 'max',
+          selector: (row) => row.statusColor(row.dir),
+        },
+        {
+          title: 'Status',
+          width: 'max',
+          selector: (row) => row.statusColor(row.status),
+        },
+        {
+          title: 'Config Issues',
+          width: 'max',
+          selector: (row) =>
+            row.configIssues ?
+              Object.entries(row.configIssues).filter(([k, v]) => !!v).map(([k, v]) => k).join(', ') :
+              '',
+        },
+      ],
+      sortedRows,
+    ),
+  );
 };
 
 function join(...paths: string[]): string {
@@ -105,4 +143,11 @@ export const command: CliCommandMetadata = {
   description: `Analyze the workspace.`,
   options: analyzeCommandOptions,
   impl: analyzeAsyncCommand,
+}
+
+interface Row {
+  dir: string;
+  statusColor: chalk.Chalk;
+  status: 'IGNORED' | 'MISCONFIGURED' | 'READY' | 'UNREGISTERED' | 'MISSING';
+  configIssues: ConfigIssues | undefined;
 }

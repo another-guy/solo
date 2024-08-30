@@ -1,3 +1,5 @@
+#! /usr/bin/env node
+
 import { createCli } from './src/cli';
 
 function runMain(): void {

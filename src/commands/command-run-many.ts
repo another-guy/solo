@@ -93,7 +93,7 @@ export async function runManyAsyncCommand(this: any, str: StrParams, options: an
   let collectedOutputs: CliCommandPolyResult = {};
 
   const filteredProjects = workspace.projects.filter(p => projectProfileFilterFn(p) && projectFilterFn(p));
-  logger.logHighlight(`Running command "${cmd}" in ${filteredProjects.length} projects.`);
+  logger.logHighlight(`Running command "${cmd}" in ${filteredProjects.length} projects` + (filteredProjects ? ` (${filteredProjects.map(p => p.gitDir).join(', ')})` : ''));
   const commandPromises = filteredProjects.map(async (projectDef) => {
     const subDir =
       commandType === 'dir' || commandType === 'git' ? projectDef.gitDir :

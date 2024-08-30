@@ -47,6 +47,18 @@ $ npm --version
 10.7.0
 ```
 
+## Building process
+
+Making CLI tool available as a globally installed npm package.
+See https://blog.logrocket.com/building-typescript-cli-node-js-commander/.
+
+```sh
+# Build
+npm run build
+# (Re)install
+npm install -g .
+```
+
 ## Roadmap
 
 * Monorepo

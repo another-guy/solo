@@ -3,10 +3,14 @@
   "version": "0.0.1",
   "description": "CLI tool by Igor Soloydenko for automating routine processes.",
   "main": "index.js",
+  "bin": {
+    "solo": "./dist/index.js"
+  },
   "scripts": {
     "start": "ts-node index.ts",
     "start-alt": "node -r ts-node/register index.ts",
-    "tsc": "tsc"
+    "tsc": "tsc",
+    "build": "npx tsc"
   },
   "author": "Igor Soloydenko",
   "license": "MIT",

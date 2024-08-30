@@ -18,10 +18,26 @@ function strToWorkspace(str: string): WorkspaceDef {
   return w;
 }
 
-export function hasIncompleteConfig(project: ProjectDef): boolean {
+export function hasIssuesInConfig
+(project: ProjectDef): false | ConfigIssues {
   const hasKeyWithoutValue = Object.values(project).some((value) => !value || (value + '').toLowerCase() === 'fixme');
   const missesGitDir = !project.gitDir;
   const missesProjectDir = !project.projectDir;
   const missesProjectFile = !project.projectFile;
-  return hasKeyWithoutValue || missesGitDir || missesProjectDir || missesProjectFile;
+  const isIncomplete = hasKeyWithoutValue || missesGitDir || missesProjectDir || missesProjectFile;
+  return isIncomplete ?
+    {
+      hasKeyWithoutValue,
+      missesGitDir,
+      missesProjectDir,
+      missesProjectFile,
+    } :
+    false;
+}
+
+export interface ConfigIssues {
+  hasKeyWithoutValue: boolean;
+  missesGitDir: boolean;
+  missesProjectDir: boolean;
+  missesProjectFile: boolean;
 }
