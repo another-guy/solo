@@ -2,10 +2,11 @@ import fs from 'fs';
 import path from 'path';
 import { createExecutionContext, parseCommonOptions } from '../cli';
 import { CliCommandMetadata } from './cli-option';
+import { SoloRcConfig } from './solorc';
 
 const commandName = `solo-check-health`;
 
-async function checkHealthAsyncCommand(this: any, str: any, options: any) {
+async function soloCheckHealthAsyncCommand(this: any, str: any, options: any) {
   const executionContext = createExecutionContext(parseCommonOptions(options));
   const { logger } = executionContext;
 
@@ -23,7 +24,7 @@ async function checkHealthAsyncCommand(this: any, str: any, options: any) {
     return;
   }
 
-  const config = JSON.parse(fs.readFileSync(cliConfigLocation, 'utf8'));
+  const config = JSON.parse(fs.readFileSync(cliConfigLocation, 'utf8')) as SoloRcConfig;
   const { ado } = config;
   if (!ado) {
     const message = 'ADO config (ado) not found in config.';
@@ -54,5 +55,5 @@ export const command: CliCommandMetadata = {
   description: `Self-check the health of the CLI tool.
 Validates the presence and the correctness of the config.`,
   options: {},
-  impl: checkHealthAsyncCommand,
+  impl: soloCheckHealthAsyncCommand,
 }
