@@ -34,7 +34,7 @@ const auditCommandOptions: CliOptionsSet = {
   omitOptions,
 };
 
-async function auditAsyncCommand(this: any, str: any, options: any) {
+async function npmAuditAsyncCommand(this: any, str: any, options: any) {
   const executionContext = createExecutionContext(parseCommonOptions(options));
   const { directory, omit } = str;
   const { logger } = executionContext;
@@ -300,5 +300,5 @@ export const command: CliCommandMetadata = {
   name: commandName,
   description: `Audit NPM packages.`,
   options: auditCommandOptions,
-  impl: auditAsyncCommand,
+  impl: npmAuditAsyncCommand,
 }

@@ -6,7 +6,7 @@ import { SoloRcConfig } from './solorc';
 
 const commandName = `solo-init`;
 
-async function soloInitCommand(this: any, str: any, options: any) {
+async function soloInitAsyncCommand(this: any, str: any, options: any) {
   const executionContext = createExecutionContext(parseCommonOptions(options));
   const { logger } = executionContext;
 
@@ -39,5 +39,5 @@ export const command: CliCommandMetadata = {
   name: commandName,
   description: `Initialize CLI tool.`,
   options: {},
-  impl: soloInitCommand,
+  impl: soloInitAsyncCommand,
 }

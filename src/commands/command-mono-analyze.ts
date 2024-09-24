@@ -26,7 +26,7 @@ const analyzeCommandOptions: CliOptionsSet = {
   directoryOption,
 };
 
-async function analyzeAsyncCommand(this: any, str: any, options: any) {
+async function monoAnalyzeAsyncCommand(this: any, str: any, options: any) {
   const executionContext = createExecutionContext(parseCommonOptions(options));
   const { directory, config: configFilePath } = str;
   const workspace = await exportWorkspace(configFilePath, executionContext);
@@ -142,7 +142,7 @@ export const command: CliCommandMetadata = {
   name: commandName,
   description: `Analyze the workspace.`,
   options: analyzeCommandOptions,
-  impl: analyzeAsyncCommand,
+  impl: monoAnalyzeAsyncCommand,
 }
 
 interface Row {

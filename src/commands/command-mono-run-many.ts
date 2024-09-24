@@ -70,7 +70,7 @@ interface StrParams {
   statusCodes?: string;
 }
 
-export async function runManyAsyncCommand(this: any, str: StrParams, options: any) {
+export async function monoRunManyAsyncCommand(this: any, str: StrParams, options: any) {
   const executionContext = createExecutionContext(parseCommonOptions(options));
   const { profile: profileName, config: configFilePath, type: commandTypeRaw, cmd, sequentially, quiet, statusCodes } = str;
   const commandType = commandTypeRaw;
@@ -139,5 +139,5 @@ export const command: CliCommandMetadata = {
   name: commandName,
   description: `Run a command against multiple projects.`,
   options: runManyCommandOptions,
-  impl: runManyAsyncCommand,
+  impl: monoRunManyAsyncCommand,
 }

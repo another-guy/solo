@@ -15,7 +15,7 @@ const listRemoteReposCommandOptions = {
   ...commonAdoOptions,
 };
 
-async function listDeploysAsyncCommand(this: any, str: any, options: any) {
+async function adoListDeploysAsyncCommand(this: any, str: any, options: any) {
   const executionContext = createExecutionContext(parseCommonOptions(options));
   const { organization, project, login, token } = str;
   const { logger } = executionContext;
@@ -29,7 +29,7 @@ export const command: CliCommandMetadata = {
   name: commandName,
   description: `[WIP] List deployments in ADO project.`,
   options: listRemoteReposCommandOptions,
-  impl: listDeploysAsyncCommand,
+  impl: adoListDeploysAsyncCommand,
 }
 
 // // TODO:

@@ -6,7 +6,7 @@ import { renderTable } from '../cli/render-table';
 import { NormalizingReplacement, TeamMappings, TeamName, teams as teamsJson } from '../data/teams';
 import { exportWorkspace } from '../load-workspace';
 import { CliCommandMetadata, CliOption, CliOptionsSet } from './cli-option';
-import { runManyAsyncCommand } from './command-run-many';
+import { monoRunManyAsyncCommand } from './command-mono-run-many';
 import { commonOptions } from './common-options';
 
 const commandName = 'git-repo-stats';
@@ -36,7 +36,7 @@ const analyzeCommandOptions: CliOptionsSet = {
   before,
 };
 
-async function analyzeAsyncCommand(this: any, str: any, options: any) {
+async function gitRepoStatsAsyncCommand(this: any, str: any, options: any) {
   const executionContext = createExecutionContext(parseCommonOptions(options));
   const { profile, config: configFilePath, after: afterDate, before: beforeDate } = str;
   const workspace = await exportWorkspace(configFilePath, executionContext);
@@ -51,7 +51,7 @@ async function analyzeAsyncCommand(this: any, str: any, options: any) {
   ]
     .filter(Boolean)
     .join(' ');
-  const authorsResponse = await runManyAsyncCommand(
+  const authorsResponse = await monoRunManyAsyncCommand(
     {
       type: 'git',
       cmd: jcGitLogCmd,
@@ -242,7 +242,7 @@ export const command: CliCommandMetadata = {
   description: `Collect Git repository stats.
 This command depends on jc to be installed from https://github.com/kellyjonbrazil/jc.`,
   options: analyzeCommandOptions,
-  impl: analyzeAsyncCommand,
+  impl: gitRepoStatsAsyncCommand,
 }
 
 interface GitLogEntry {
