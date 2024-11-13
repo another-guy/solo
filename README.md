@@ -45,6 +45,21 @@ v22.2.0
 
 $ npm --version
 10.7.0
+
+$ python --version
+Python 3.12.6
+```
+
+Install Python via chocolatey:
+
+```sh
+choco install python
+```
+
+Install jc python module:
+
+```sh
+python -m pip install jc
 ```
 
 ## Building process
