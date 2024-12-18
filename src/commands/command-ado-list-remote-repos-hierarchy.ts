@@ -3,18 +3,28 @@ import { createExecutionContext, parseCommonOptions } from '../cli';
 import { renderTable } from '../cli/render-table';
 import { AdoListProjectsResponse, AdoListRepositoriesResponse, AdoRepository } from '../types';
 import { commonAdoOptions } from './ado-options';
-import { CliCommandMetadata } from './cli-option';
+import { CliCommandMetadata, CliOption } from './cli-option';
 
 const commandName = `ado-list-remote-repos-hierarchy`;
+
+const sortOption: CliOption = {
+  short: 's',
+  long: `sort`,
+  codeName: `sort`,
+  description: `Column to sort by.`,
+  exampleValue: `project or repo`,
+  defaultValue: `project`,
+};
 
 const { project, ...otherCommonOptions } = commonAdoOptions;
 const listRemoteReposCommandOptions = {
   ...otherCommonOptions,
+  sortOption,
 };
 
 async function adoListRemoteReposAsyncCommand(this: any, str: any, options: any) {
   const executionContext = createExecutionContext(parseCommonOptions(options));
-  const { organization, project, login, token } = str;
+  const { organization, project, login, token, sort } = str;
   const { logger } = executionContext;
 
   const org = organization || listRemoteReposCommandOptions.organization.defaultValue;
@@ -48,24 +58,35 @@ async function adoListRemoteReposAsyncCommand(this: any, str: any, options: any)
   const promiseResults = await Promise.allSettled(xPromises);
 
   const columnDefs = [
-    { title: 'repo id', width: 38, selector: (repo: AdoRepository) => repo.id },
+    { title: 'project', width: 40, selector: (repo: AdoRepository) => repo.project.name },
+    // { title: 'repo id', width: 38, selector: (repo: AdoRepository) => repo.id },
     { title: 'repo name', width: 40, selector: (repo: AdoRepository) => repo.name },
     { title: 'remoteUrl', width: 160, selector: (repo: AdoRepository) => repo.remoteUrl },
   ];
+  const rows =
+    promiseResults.reduce(
+      (result, promiseResult) => {
+        if (promiseResult.status !== 'rejected') {
+          (promiseResult.value.adoRepos || []).forEach((repo) => {
+            result.push(repo);
+          });
+        }
+        return result;
+      },
+      [] as AdoRepository[],
+    )
+      .sort((repo1, repo2) => {
+        const select = (repo: AdoRepository) =>
+          sort === 'repo' ? repo.name :
+            sort === 'project' ? repo.project.name :
+              repo.name;
+        return select(repo1).localeCompare(select(repo2));
+      });
 
-  promiseResults.forEach(promiseResult => {
-    if (promiseResult.status === 'rejected') throw promiseResult.reason;
-
-    const { adoProject, adoRepos } = promiseResult.value;
-    const repoCount = adoRepos?.length;
-
-    console.log(`${repoCount} repos in ${adoProject.name} (${adoProject.id}):`);
-    if (repoCount)
-      console.log(renderTable(
-        columnDefs,
-        adoRepos || [],
-      ));
-  });
+  console.log(renderTable(
+    columnDefs,
+    rows,
+  ))
 };
 
 export const command: CliCommandMetadata = {
