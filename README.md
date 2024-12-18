@@ -84,6 +84,7 @@ npm install -g .
 * NPM
   * ✅ `npm-audit`
 * ADO
+  * 🔨 `ado-list-remote-repos-hierarchy`
   * ✅ `ado-list-remote-repos`
   * 🧠 `ado-list-deploys`
 * SCV
