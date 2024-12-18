@@ -167,3 +167,16 @@ export interface NpmLsDependency {
   overriden: boolean;
   dependencies?: { [packageName: string]: NpmLsDependency };
 }
+
+export interface AdoListProjectsResponse {
+  count: number;
+  value: AdoProject[];
+}
+
+export interface AdoProject {
+  id: string;
+  name: string;
+  description: string;
+  url: string;
+  state: string;
+}

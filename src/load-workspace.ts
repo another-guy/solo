@@ -18,8 +18,9 @@ function strToWorkspace(str: string): WorkspaceDef {
   return w;
 }
 
-export function hasIssuesInConfig
-(project: ProjectDef): false | ConfigIssues {
+export function hasIssuesInConfig(
+  project: ProjectDef,
+): false | ConfigIssues {
   const hasKeyWithoutValue = Object.values(project).some((value) => !value || (value + '').toLowerCase() === 'fixme');
   const missesGitDir = !project.gitDir;
   const missesProjectDir = !project.projectDir;
