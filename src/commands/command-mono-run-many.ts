@@ -23,7 +23,7 @@ const cmd: CliOption = {
   long: `cmd`,
   codeName: `command`,
   description: `the command to run.`,
-  exampleValue: `"git pull"`,
+  exampleValue: `"git branch --show-current"`,
 };
 
 const sequentially: CliOption = {
