@@ -109,7 +109,9 @@ export async function monoRunManyAsyncCommand(this: any, str: StrParams, options
       const throwOnCode = statusCodes ?
         (code: number) => !statusCodes.split(',').map(Number).includes(code) :
         nonZeroCode;
-      const stdout = await execAsync(cmd, { cwd: dir, throwOnCode: throwOnCode });
+      let stdout = await execAsync(cmd, { cwd: dir, throwOnCode: throwOnCode });
+      if (stdout[stdout.length - 1] === '\n')
+        stdout = stdout.slice(0, stdout.length - 1);
 
       const text = `${dir}\n${stdout}`;
       if (!quiet)

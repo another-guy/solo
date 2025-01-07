@@ -61,7 +61,7 @@ export function logger(options: CommonOptions) {
     ...input: unknown[]
   ) => {
     const [first, ...rest] = input;
-    console.log(colorFn(timestamp()), colorFn(level), colorFn(first as string), colorFn(rest.join(' ')));
+    console.log(chalk.whiteBright(timestamp()), colorFn(level), chalk.gray(first as string), chalk.gray(rest.join(' ')));
   };
 
   return {
