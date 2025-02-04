@@ -5,7 +5,7 @@ const profile: CliOption = {
   long: `profile`,
   codeName: `profile`,
   description: `profile to use to filter target projects.`,
-  exampleValue: `4vendors`,
+  exampleValue: `4s`,
 };
 
 const configFilePath: CliOption = {
